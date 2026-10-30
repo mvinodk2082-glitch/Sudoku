@@ -8,6 +8,7 @@ import {
   recordResult, reducer, saveGame, saveSettings, saveStats,
 } from './game/store';
 import { Icon, Sheet, Toggle } from './ui';
+import { THEMES, applyTheme, resolveTheme, youVariants, type Tokens } from './themes';
 
 type View = 'home' | 'game';
 type Modal = null | 'stats' | 'settings' | 'new';
@@ -27,9 +28,13 @@ export default function App() {
   const today = dailyKey();
 
   useEffect(() => {
-    document.documentElement.classList.toggle('light', settings.theme === 'light');
-    document.querySelector('meta[name=theme-color]')?.setAttribute('content', settings.theme === 'light' ? '#f6f6f4' : '#000000');
+    applyTheme(settings.theme);
     saveSettings(settings);
+    if (resolveTheme(settings.theme).id !== 'you') return;
+    const mq = matchMedia('(prefers-color-scheme: dark)');
+    const on = () => applyTheme(settings.theme);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
   }, [settings]);
   useEffect(() => saveStats(stats), [stats]);
   useEffect(() => saveGame(g), [g]);
@@ -353,8 +358,22 @@ function SettingsSheet({ settings, onChange, onClose, onReset }: { settings: Set
   const set = <K extends keyof Settings>(k: K, v: Settings[K]) => onChange({ ...settings, [k]: v });
   return (
     <Sheet title="Settings" onClose={onClose}>
+      <h3 className="mb-2 text-xs uppercase tracking-widest text-muted">Theme</h3>
+      <div className="mb-4 grid grid-cols-3 gap-2" role="radiogroup" aria-label="Theme">
+        {THEMES.map((t) => {
+          const active = resolveTheme(settings.theme).id === t.id;
+          return (
+            <button key={t.id} role="radio" aria-checked={active} aria-label={`${t.name} theme`} onClick={() => set('theme', t.id)}
+              className={`rounded-2xl border-2 p-1.5 text-left ${active ? 'border-accent' : 'border-transparent'}`}>
+              {t.id === 'you'
+                ? <div className="flex overflow-hidden rounded-xl"><div className="w-1/2 overflow-hidden"><Swatch k={youVariants.light} /></div><div className="w-1/2 overflow-hidden [direction:rtl]"><Swatch k={youVariants.dark} /></div></div>
+                : <Swatch k={t.tokens} />}
+              <div className="mt-1 truncate px-0.5 text-[11px]">{t.name}</div>
+            </button>
+          );
+        })}
+      </div>
       <div className="divide-y divide-line">
-        <Toggle label="Light theme" desc="Off = AMOLED true black" checked={settings.theme === 'light'} onChange={(v) => set('theme', v ? 'light' : 'dark')} />
         <Toggle label="Mistake checking" desc="Show wrong digits in rose" checked={settings.mistakeCheck} onChange={(v) => set('mistakeCheck', v)} />
         <Toggle label="3-mistake limit" desc="Game ends after three mistakes" checked={settings.mistakeLimit} disabled={!settings.mistakeCheck} onChange={(v) => set('mistakeLimit', v)} />
         <Toggle label="Highlight same digits" checked={settings.highlightSame} onChange={(v) => set('highlightSame', v)} />
@@ -365,5 +384,24 @@ function SettingsSheet({ settings, onChange, onClose, onReset }: { settings: Set
       <button onClick={onReset} className="mt-4 w-full rounded-full border border-rose/40 py-3 text-sm text-rose">Reset statistics</button>
       <p className="mt-4 text-center text-xs text-muted">Keyboard: 1–9, arrows, Backspace, N notes, H hint, Space pause, Ctrl+Z / Ctrl+Y</p>
     </Sheet>
+  );
+}
+
+/** Live mini-board preview drawn with the theme's own colours. */
+function Swatch({ k }: { k: Tokens }) {
+  const cells: [string, string, string][] = [
+    ['5', k.given, k.peer], ['', '', k.peer], ['3', k.accent, k.same],
+    ['', '', k.surface], ['3', k.accent, k.sel], ['', '', k.peer],
+    ['9', k.rose, k.surface], ['n', k.note, k.surface], ['3', k.given, k.same],
+  ];
+  return (
+    <div className="grid aspect-square w-full min-w-[84px] grid-cols-3 overflow-hidden rounded-xl" style={{ background: k.bg, border: `2px solid ${k.thick}` }} aria-hidden="true">
+      {cells.map(([d, c, b], i) => (
+        <div key={i} className="flex items-center justify-center text-[15px] font-medium leading-none"
+          style={{ background: b, color: c, borderRight: i % 3 < 2 ? `1px solid ${k.line}` : undefined, borderBottom: i < 6 ? `1px solid ${k.line}` : undefined }}>
+          {d === 'n' ? <span className="text-[8px] leading-[9px]">1 4<br />7</span> : d}
+        </div>
+      ))}
+    </div>
   );
 }

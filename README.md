@@ -8,6 +8,8 @@ A calm, ad-free Sudoku for the web and Android, made for Pixel phones. It has an
 <img src="docs/hint.png" width="240" alt="Smart hint naming the technique">
 </p>
 
+![All themes](docs/themes.png)
+
 ## Features
 
 **Puzzles**
@@ -37,7 +39,7 @@ A calm, ad-free Sudoku for the web and Android, made for Pixel phones. It has an
 **Design and accessibility**
 - AMOLED true black `#000000`, soft greys and one muted sage accent `#8FA89A`. Given digits are soft white, your digits are sage and errors are muted rose.
 - Thick 3×3 lines and large digits. Subtle animations: cells pop in, a completed row, column or box glows gently, and the win screen is calm.
-- Optional light theme. Haptics are optional and off by default.
+- **Nine themes** with a live mini-board preview in Settings: AMOLED Sage (default), AMOLED Slate, AMOLED Sand, AMOLED Lavender, Midnight, Graphite, Paper, Mist, and Material You, which follows your phone's light or dark mode. The Android status and navigation bars match the theme. Haptics are optional and off by default.
 - The number pad sits at the bottom so you can play one-handed.
 - ARIA grid and cell labels, a live region for announcements, and focus-visible outlines.
 
@@ -77,8 +79,8 @@ The minimum Android version is 7.0 (API 24). The adaptive icon has a monochrome 
 
 ## Download
 
-**[⬇ Download Sudoku 1.0 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.0/Sudoku-1.0-release.apk)** (1.09 MB). It's also in [`releases/`](releases/Sudoku-1.0-release.apk).
+**[⬇ Download Sudoku 1.1 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.1/Sudoku-1.1-release.apk)** (1.10 MB). It's also in [`releases/`](releases/Sudoku-1.1-release.apk).
 
-SHA-256: `5f383d544912d8747612a2dbc18119abb8e0ca61c4a0002c67f058a0f82aa34c`
+SHA-256: `9fde731c63420d2fe540447352ebe45c71cc2a57edb99b965670175d7a5066b6`
 
 To install, open the link on your phone and allow "Install unknown apps" for your browser or Files app. You don't need developer mode.

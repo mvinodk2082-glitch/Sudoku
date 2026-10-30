@@ -19,10 +19,10 @@ export function Board({ s, settings, onSelect }: Props) {
         const peer = sel >= 0 && i !== sel && (rowOf(sel) === r || colOf(sel) === c || boxOf(sel) === boxOf(i));
         const same = settings.highlightSame && !!selVal && v === selVal && i !== sel;
         let bg = '';
-        if (i === sel) bg = 'bg-accent/30';
-        else if (hint.has(i)) bg = 'bg-accent/20';
-        else if (same) bg = 'bg-accent/[.16]';
-        else if (peer) bg = 'bg-raised';
+        if (i === sel) bg = 'bg-sel';
+        else if (hint.has(i)) bg = 'bg-same';
+        else if (same) bg = 'bg-same';
+        else if (peer) bg = 'bg-peer';
         const borders = `${c < 8 ? (c % 3 === 2 ? 'border-r-2 border-r-thick' : 'border-r border-r-line') : ''} ${r < 8 ? (r % 3 === 2 ? 'border-b-2 border-b-thick' : 'border-b border-b-line') : ''}`;
         const notes = g.notes[i];
         const label = `Row ${r + 1}, column ${c + 1}, ${v ? `${v}${given ? ', given' : ''}${wrong ? ', incorrect' : ''}` : notes ? `notes ${[1,2,3,4,5,6,7,8,9].filter((d) => notes & (1 << (d - 1))).join(' ')}` : 'empty'}`;
@@ -39,7 +39,7 @@ export function Board({ s, settings, onSelect }: Props) {
             ) : notes ? (
               <span className="grid h-full w-full grid-cols-3 grid-rows-3 p-[2px]">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
-                  <span key={d} className={`flex items-center justify-center text-[clamp(8px,2.5vw,12px)] leading-none ${selVal === d && notes & (1 << (d - 1)) ? 'font-semibold text-accent' : 'text-muted'}`}>
+                  <span key={d} className={`flex items-center justify-center text-[clamp(8px,2.5vw,12px)] leading-none ${selVal === d && notes & (1 << (d - 1)) ? 'font-semibold text-accent' : 'text-note'}`}>
                     {notes & (1 << (d - 1)) ? d : ''}
                   </span>
                 ))}

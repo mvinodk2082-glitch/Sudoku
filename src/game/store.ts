@@ -8,11 +8,11 @@ export interface Game {
   mistakes: number; hints: number; elapsed: number; status: 'playing' | 'won' | 'lost';
 }
 export interface Settings {
-  theme: 'dark' | 'light'; mistakeCheck: boolean; mistakeLimit: boolean; haptics: boolean;
+  theme: string; mistakeCheck: boolean; mistakeLimit: boolean; haptics: boolean;
   highlightSame: boolean; autoNotes: boolean; showTimer: boolean;
 }
 export const DEFAULT_SETTINGS: Settings = {
-  theme: 'dark', mistakeCheck: true, mistakeLimit: true, haptics: false, highlightSame: true, autoNotes: true, showTimer: true,
+  theme: 'sage', mistakeCheck: true, mistakeLimit: true, haptics: false, highlightSame: true, autoNotes: true, showTimer: true,
 };
 export const MAX_MISTAKES = 3;
 

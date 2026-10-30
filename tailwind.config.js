@@ -7,6 +7,7 @@ export default {
       colors: {
         bg: v('bg'), surface: v('surface'), raised: v('raised'), line: v('line'), thick: v('thick'),
         text: v('text'), muted: v('muted'), given: v('given'), accent: v('accent'), rose: v('rose'),
+        peer: v('peer'), same: v('same'), sel: v('sel'), note: v('note'),
       },
       fontFamily: { sans: ['Inter', 'Roboto', 'system-ui', 'sans-serif'] },
       keyframes: {
