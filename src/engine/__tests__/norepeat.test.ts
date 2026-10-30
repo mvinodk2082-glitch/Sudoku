@@ -73,6 +73,7 @@ describe('challenge codes', () => {
       hostName: 'Vinod ✓', hostTime: 272000, hostMistakes: 1, guestName: '', guestTime: null, guestMistakes: null });
     expect(code.length).toBeLessThan(100);
     const c = decodeChallenge(`sudoku://play?c=${code}`)!;
+    expect(decodeChallenge(`https://mvinodk2082-glitch.github.io/sudoku-play/?c=${code}`)?.id).toBe(c.id);
     expect(c.kind).toBe('invite');
     expect(c.puzzle).toEqual(p.puzzle);
     expect(c.solution).toEqual(p.solution);

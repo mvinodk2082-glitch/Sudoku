@@ -11,7 +11,7 @@ import { Icon, Sheet, Toggle } from './ui';
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { ChallengesSheet, Compare, InviteSheet, shareText } from './Challenge';
-import { type ChallengeRecord, challengeLink, decodeChallenge, encodeChallenge, loadChallenges, markSeen, newChallengeId, upsertChallenge } from './game/challenge';
+import { APK_URL, type ChallengeRecord, challengeLink, decodeChallenge, encodeChallenge, loadChallenges, markSeen, newChallengeId, upsertChallenge } from './game/challenge';
 import { THEMES, applyTheme, resolveTheme, youVariants, type Tokens } from './themes';
 
 type View = 'home' | 'game';
@@ -31,6 +31,7 @@ export default function App() {
   const [challenges, setChallenges] = useState<ChallengeRecord[]>(loadChallenges);
   const [incoming, setIncoming] = useState<ChallengeRecord | null>(null);
   const [joinError, setJoinError] = useState('');
+  const [webBannerOff, setWebBannerOff] = useState(false);
   const [inviteId, setInviteId] = useState('');
   const g = s.game;
   const today = dailyKey();
@@ -221,6 +222,13 @@ export default function App() {
           </header>
 
           <main className="flex flex-1 flex-col justify-center px-2">
+            {g.challenge?.role === 'guest' && !Capacitor.isNativePlatform() && !webBannerOff && (
+              <div className="mx-auto mb-2 flex w-full items-center gap-2 rounded-xl bg-raised px-3 py-2 text-[13px]">
+                <span className="flex-1 text-muted">Playing in the browser. Get the Android app for offline play and history.</span>
+                <a href={APK_URL} target="_blank" rel="noopener" className="rounded-full bg-accent px-3 py-1 font-medium text-bg">Get app</a>
+                <button onClick={() => setWebBannerOff(true)} aria-label="Dismiss" className="px-1 text-muted">×</button>
+              </div>
+            )}
             {g.challenge?.role === 'guest' && (
               <div className="mx-auto mb-3 flex w-full items-center gap-2 rounded-xl bg-accent/10 px-3 py-2 text-[13px]">
                 <Icon name="users" className="h-4 w-4 text-accent" />

@@ -12,6 +12,12 @@ A calm, ad-free Sudoku for the web and Android, made for Pixel phones. It has an
 
 ## Features
 
+### New in 1.3
+- **Play on the web** at https://mvinodk2082-glitch.github.io/sudoku-play/. Invite links are now normal https links that open the puzzle in any browser, so friends don't need the app. A banner offers the APK.
+- On Android, tapping an invite link offers **Open with Sudoku**. `sudoku://` links and pasted codes still work.
+
+<p><img src="docs/web.png" width="260"></p>
+
 ### New in 1.2
 - **Challenge a friend.** Tap the share icon in a game (or "Challenge a friend" after you win) to send your exact puzzle as a `sudoku://play?c=…` link plus a short code. Your friend taps the link or pastes the code into **Join a friend** on home.
 - **Compare results.** When your friend finishes, they get a side-by-side card (time and mistakes) and can **Send result back**. Open it and you see who won. Every match is kept under **Challenges** on home.
@@ -86,10 +92,16 @@ cd android && ./gradlew assembleRelease   # app/build/outputs/apk/release/app-re
 
 The minimum Android version is 7.0 (API 24). The adaptive icon has a monochrome layer, so it works with Pixel themed icons.
 
+## Publishing the web version
+
+`scripts/publish-web.sh` rebuilds the app and pushes only `dist/` (plus a `404.html` fallback and `web-publish/README.md`) to the public repo [`sudoku-play`](https://github.com/mvinodk2082-glitch/sudoku-play), which GitHub Pages serves from `main`. It needs `gh` to be logged in. No source code or keys are published.
+
 ## Download
 
-**[⬇ Download Sudoku 1.2 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.2/Sudoku-1.2-release.apk)** (1.23 MB). It's also in [`releases/`](releases/Sudoku-1.2-release.apk).
-SHA-256: `8ea04353d19ebb89baf7f6572501f149beca03ed839ff95a7cddaf83afb3e18a`
+**▶ Play in the browser: https://mvinodk2082-glitch.github.io/sudoku-play/**
+
+**[⬇ Download Sudoku 1.3 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.3/Sudoku-1.3-release.apk)** (1.23 MB). It's also in [`releases/`](releases/Sudoku-1.3-release.apk).
+SHA-256: `8d6c5566d2577d27791a84492bf2a87acd082e3b23cdf6a9bf9a23cd96b5b2e0`
 
 SHA-256: `9fde731c63420d2fe540447352ebe45c71cc2a57edb99b965670175d7a5066b6`
 

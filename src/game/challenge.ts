@@ -19,6 +19,8 @@ export interface Challenge {
 }
 
 export const APP_LINK = 'sudoku://play?c=';
+export const WEB_LINK = 'https://mvinodk2082-glitch.github.io/sudoku-play/?c=';
+export const APK_URL = 'https://github.com/mvinodk2082-glitch/Sudoku/releases/latest';
 const NONE = 0xffffff;
 
 const b64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -76,7 +78,8 @@ export function decodeChallenge(input: string): (Challenge & { solution: number[
   }
 }
 
-export const challengeLink = (code: string) => `${APP_LINK}${code}`;
+export const challengeLink = (code: string) => `${WEB_LINK}${code}`;
+export const appLink = (code: string) => `${APP_LINK}${code}`;
 
 // ---- history ----
 export interface ChallengeRecord {

@@ -30,6 +30,14 @@
                 <data android:scheme="sudoku" android:host="play" />
             </intent-filter>
 
+            <!-- Web challenge links (not auto-verified: assetlinks.json would need the github.io root) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="mvinodk2082-glitch.github.io" android:pathPrefix="/sudoku-play" />
+            </intent-filter>
+
         </activity>
 
         <provider

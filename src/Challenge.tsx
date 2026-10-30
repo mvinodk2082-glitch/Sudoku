@@ -53,7 +53,7 @@ export function InviteSheet({ game, name, onName, onClose, challengeId }: {
   });
   const link = challengeLink(code);
   const who = name.trim() || 'A friend';
-  const msg = `${who} challenged you to a ${game.difficulty} Sudoku${finished ? ` and solved it in ${fmtTime(game.elapsed)}` : ''}. Can you beat it?\n\nOpen in the Sudoku app: ${link}\n\nOr open Sudoku → Join with code and paste:\n${code}`;
+  const msg = `${who} challenged you to a ${game.difficulty} Sudoku${finished ? ` and solved it in ${fmtTime(game.elapsed)}` : ''}. Can you beat it?\n\nPlay: ${link}\n(Opens in the Sudoku app or right in your browser.)\n\nOr open Sudoku → Join with code and paste:\n${code}`;
   return (
     <Sheet title="Challenge a friend" onClose={onClose}>
       <p className="text-sm text-muted">Your friend gets this exact puzzle. When they finish, they can send their result back to compare.</p>

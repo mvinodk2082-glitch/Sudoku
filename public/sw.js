@@ -1,5 +1,5 @@
 // Offline-first service worker: precache the shell, then cache every same-origin GET (stale-while-revalidate).
-const CACHE = 'sudoku-v1.2';
+const CACHE = 'sudoku-v1.3';
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest'])).then(() => self.skipWaiting()));
 });
