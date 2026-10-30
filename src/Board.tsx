@@ -29,11 +29,11 @@ export function Board({ s, settings, onSelect }: Props) {
         return (
           <button key={i} role="gridcell" aria-label={label} aria-selected={i === sel} tabIndex={i === sel ? 0 : -1}
             onClick={() => onSelect(i)}
-            className={`relative flex aspect-square items-center justify-center ${borders} ${bg} transition-colors duration-150`}>
+            className={`relative flex aspect-square items-center justify-center ${borders} ${bg} ${i === sel ? 'is-sel' : ''} ${wrong ? 'is-wrong' : ''} transition-colors duration-150`}>
             {glow.has(i) && <span key={s.glow.key} className="pointer-events-none absolute inset-0 animate-glow" />}
             {v ? (
               <span key={i === s.pop.cell ? s.pop.key : 0}
-                className={`relative text-[clamp(20px,7.4vw,34px)] leading-none ${given ? 'font-medium text-given' : wrong ? 'font-normal text-rose' : 'font-normal text-accent'} ${i === s.pop.cell && !given ? 'animate-pop' : ''} ${wrong && i === s.pop.cell ? 'animate-shake' : ''}`}>
+                className={`relative text-[clamp(20px,7.4vw,34px)] leading-none ${given ? 'font-medium text-given' : wrong ? 'font-normal text-rose wrong-digit' : 'font-normal text-accent'} ${i === s.pop.cell && !given ? 'animate-pop' : ''} ${wrong && i === s.pop.cell ? 'animate-shake' : ''}`}>
                 {v}
               </span>
             ) : notes ? (

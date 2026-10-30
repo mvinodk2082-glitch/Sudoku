@@ -20,6 +20,14 @@ describe('themes', () => {
       expect(contrast(k.text, k.bg)).toBeGreaterThanOrEqual(7);
     });
   }
+  it('E-ink is pure greyscale and light', () => {
+    const t = THEMES.find((x) => x.id === 'eink')!;
+    expect(t.name).toBe('E-ink'); expect(t.dark).toBe(false);
+    for (const v of Object.values(t.tokens)) {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(v.slice(i, i + 2), 16));
+      expect(Math.max(r, g, b) - Math.min(r, g, b)).toBeLessThanOrEqual(2);
+    }
+  });
   it('migrates 1.0 theme values', () => {
     expect(resolveTheme('dark').id).toBe('sage');
     expect(resolveTheme('light').id).toBe('paper');

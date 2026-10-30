@@ -37,6 +37,9 @@ export const THEMES: Theme[] = [
   { id: 'mist', name: 'Mist', dark: false, tokens: {
     bg: '#EEF1F4', surface: '#F8FAFC', raised: '#E3E8ED', line: '#CDD4DC', thick: '#4E5866', text: '#23282F', muted: '#6C7682',
     given: '#1E232A', accent: '#5B7389', rose: '#A8586A', peer: '#E4E9EF', same: '#D7E0EA', sel: '#C5D3E1', note: '#667080' } },
+  { id: 'eink', name: 'E-ink', dark: false, tokens: {
+    bg: '#FDFDFB', surface: '#FDFDFB', raised: '#EBEBEB', line: '#6E6E6E', thick: '#000000', text: '#000000', muted: '#4A4A4A',
+    given: '#000000', accent: '#333333', rose: '#000000', peer: '#F0F0F0', same: '#DCDCDC', sel: '#C4C4C4', note: '#3A3A3A' } },
   { id: 'you', name: 'Material You', dark: true, tokens: youDark },
 ];
 
@@ -63,6 +66,7 @@ export function applyTheme(id: string) {
   const t = resolveTheme(id);
   const root = document.documentElement;
   for (const [k, v] of Object.entries(t.tokens)) root.style.setProperty(`--${k}`, rgb(v));
+  root.dataset.theme = t.id;
   root.style.colorScheme = t.dark ? 'dark' : 'light';
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', t.tokens.bg);
   if (Capacitor.isNativePlatform()) SystemBars.setColors({ color: t.tokens.bg, dark: t.dark }).catch(() => {});
