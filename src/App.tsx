@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Board } from './Board';
 import { DIFFICULTIES, Difficulty, dailyKey } from './engine/constants';
@@ -8,10 +8,14 @@ import {
   recordResult, reducer, saveGame, saveSettings, saveStats,
 } from './game/store';
 import { Icon, Sheet, Toggle } from './ui';
+import { App as CapApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
+import { ChallengesSheet, Compare, InviteSheet, shareText } from './Challenge';
+import { type ChallengeRecord, challengeLink, decodeChallenge, encodeChallenge, loadChallenges, markSeen, newChallengeId, upsertChallenge } from './game/challenge';
 import { THEMES, applyTheme, resolveTheme, youVariants, type Tokens } from './themes';
 
 type View = 'home' | 'game';
-type Modal = null | 'stats' | 'settings' | 'new';
+type Modal = null | 'stats' | 'settings' | 'new' | 'invite' | 'challenges';
 
 export default function App() {
   const [settings, setSettings] = useState<Settings>(loadSettings);
@@ -24,6 +28,10 @@ export default function App() {
   const [modal, setModal] = useState<Modal>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [announce, setAnnounce] = useState('');
+  const [challenges, setChallenges] = useState<ChallengeRecord[]>(loadChallenges);
+  const [incoming, setIncoming] = useState<ChallengeRecord | null>(null);
+  const [joinError, setJoinError] = useState('');
+  const [inviteId, setInviteId] = useState('');
   const g = s.game;
   const today = dailyKey();
 
@@ -68,9 +76,78 @@ export default function App() {
     setModal(null);
     setLoading(opts.daily ? 'Daily challenge' : opts.difficulty!);
     const puzzle = await requestPuzzle(opts);
+    markSeen(puzzle.difficulty, puzzle.key); // never serve this combination again at this level
     dispatch({ type: 'new', puzzle, daily: opts.daily ?? null });
     setLoading(null);
     setView('game');
+  };
+
+  /** Handle an invite or a returned result (code or any link containing c=...). */
+  const handleCode = useCallback((raw: string): boolean => {
+    const c = decodeChallenge(raw);
+    if (!c) return false;
+    setJoinError('');
+    if (c.kind === 'invite') {
+      const cur = s.game;
+      if (cur && cur.status === 'playing' && cur.values.some((v, i) => v !== cur.puzzle[i]) && cur.challenge?.id !== c.id) {
+        setStats((st) => recordResult(st, cur, false));
+      }
+      if (cur?.challenge?.id === c.id && cur.status === 'playing') { setView('game'); return true; }
+      setChallenges(upsertChallenge({ id: c.id, role: 'guest', difficulty: c.difficulty, puzzle: c.puzzle.join(''), opponent: c.hostName,
+        theirTime: c.hostTime, theirMistakes: c.hostMistakes }));
+      import('./engine/canonical').then(({ canonicalKey }) => markSeen(c.difficulty, canonicalKey(c.puzzle)));
+      dispatch({ type: 'new', puzzle: { puzzle: c.puzzle, solution: c.solution, difficulty: c.difficulty, clues: c.puzzle.filter(Boolean).length }, daily: null,
+        challenge: { id: c.id, role: 'guest', opponent: c.hostName, theirTime: c.hostTime, theirMistakes: c.hostMistakes } });
+      setModal(null); setView('game');
+    } else {
+      const list = upsertChallenge({ id: c.id, role: 'host', difficulty: c.difficulty, puzzle: c.puzzle.join(''), opponent: c.guestName,
+        theirTime: c.guestTime, theirMistakes: c.guestMistakes,
+        ...(loadChallenges().some((r) => r.id === c.id && r.role === 'host') ? {} : { myTime: c.hostTime, myMistakes: c.hostMistakes }) });
+      setChallenges(list);
+      setIncoming(list.find((r) => r.id === c.id && r.role === 'host') ?? null);
+      setModal(null);
+    }
+    return true;
+  }, [s.game]);
+
+  // Incoming links: Android deep links (sudoku://play?c=...) and web URLs (?c=... or #c=...).
+  const handleRef = useRef(handleCode);
+  handleRef.current = handleCode;
+  useEffect(() => {
+    const fromUrl = () => { if (/[?&#]c=/.test(location.href)) { handleRef.current(location.href); history.replaceState(null, '', location.pathname); } };
+    fromUrl();
+    if (!Capacitor.isNativePlatform()) { window.addEventListener('hashchange', fromUrl); return () => window.removeEventListener('hashchange', fromUrl); }
+    CapApp.getLaunchUrl().then((r) => { if (r?.url) handleRef.current(r.url); }).catch(() => {});
+    const h = CapApp.addListener('appUrlOpen', (e) => handleRef.current(e.url));
+    return () => { h.then((x) => x.remove()); };
+  }, []);
+
+  // Keep challenge history in sync with finished challenge games.
+  useEffect(() => {
+    const ch = g?.challenge;
+    if (!g || !ch || g.status === 'playing') return;
+    setChallenges(upsertChallenge({ id: ch.id, role: ch.role, difficulty: g.difficulty, puzzle: g.puzzle.join(''),
+      myTime: g.status === 'won' ? g.elapsed : null, myMistakes: g.mistakes }));
+  }, [g?.status, g]);
+
+  const ensureChallengeId = () => {
+    if (g?.challenge?.role === 'host') return g.challenge.id;
+    const id = newChallengeId();
+    if (g) {
+      dispatch({ type: 'setChallenge', challenge: { id, role: 'host', opponent: '', theirTime: null, theirMistakes: null } });
+      setChallenges(upsertChallenge({ id, role: 'host', difficulty: g.difficulty, puzzle: g.puzzle.join(''),
+        myTime: g.status === 'won' ? g.elapsed : null, myMistakes: g.status === 'won' ? g.mistakes : null }));
+    }
+    return id;
+  };
+  const sendResultBack = async () => {
+    if (!g?.challenge) return;
+    const ch = g.challenge;
+    const code = encodeChallenge({ kind: 'result', id: ch.id, difficulty: g.difficulty, puzzle: g.puzzle, hostName: ch.opponent,
+      hostTime: ch.theirTime, hostMistakes: ch.theirMistakes, guestName: settings.playerName,
+      guestTime: g.status === 'won' ? g.elapsed : null, guestMistakes: g.mistakes });
+    const who = settings.playerName.trim() || 'Your friend';
+    await shareText('Sudoku result', `${who} ${g.status === 'won' ? `solved your ${g.difficulty} challenge in ${fmtTime(g.elapsed)}` : `didn't finish your ${g.difficulty} challenge`} (${g.mistakes} mistakes).\n\nSee the comparison: ${challengeLink(code)}\n\nOr open Sudoku → Join with code and paste:\n${code}`);
   };
 
   const input = useCallback((d: number) => { dispatch({ type: 'input', digit: d, settings }); buzz(); }, [settings, buzz]);
@@ -119,7 +196,8 @@ export default function App() {
       <div className="sr-only" aria-live="polite">{announce}</div>
       {view === 'home' || !g ? (
         <Home game={g} stats={stats} today={today} onContinue={() => { dispatch({ type: 'pause', paused: false }); setView('game'); }}
-          onStart={startGame} onModal={setModal} loading={loading} />
+          onStart={startGame} onModal={setModal} loading={loading}
+          onJoin={(v) => { if (!handleCode(v)) setJoinError('That code isn’t a valid Sudoku challenge.'); }} joinError={joinError} />
       ) : (
         <>
           <header className="safe-t flex items-center justify-between px-3 pb-2">
@@ -132,6 +210,9 @@ export default function App() {
               </div>
             </div>
             <div className="flex items-center">
+              {g.challenge?.role !== 'guest' && (
+                <button className="rounded-full p-2.5 text-muted hover:bg-raised" onClick={() => { setInviteId(ensureChallengeId()); setModal('invite'); }} aria-label="Invite a friend to this puzzle"><Icon name="share" /></button>
+              )}
               {settings.showTimer && <span className="w-14 text-right text-sm tabular-nums text-muted" aria-label={`Time ${fmtTime(g.elapsed)}`}>{fmtTime(g.elapsed)}</span>}
               <button className="rounded-full p-2.5 text-muted hover:bg-raised" onClick={() => dispatch({ type: 'pause', paused: !s.paused })} aria-label={s.paused ? 'Resume' : 'Pause'}>
                 <Icon name={s.paused ? 'play' : 'pause'} />
@@ -140,6 +221,12 @@ export default function App() {
           </header>
 
           <main className="flex flex-1 flex-col justify-center px-2">
+            {g.challenge?.role === 'guest' && (
+              <div className="mx-auto mb-3 flex w-full items-center gap-2 rounded-xl bg-accent/10 px-3 py-2 text-[13px]">
+                <Icon name="users" className="h-4 w-4 text-accent" />
+                <span>Challenge from <b className="font-medium">{g.challenge.opponent || 'a friend'}</b>{g.challenge.theirTime !== null ? ` · beat ${fmtTime(g.challenge.theirTime)}` : ' · they’re still solving'}</span>
+              </div>
+            )}
             <div className="relative mx-auto w-full" style={{ maxWidth: 'min(100%, calc(100dvh - 330px))', minWidth: 'min(100%, 280px)' }}>
               <Board s={s} settings={settings} onSelect={(i) => dispatch({ type: 'select', cell: i })} />
               {s.paused && (
@@ -190,7 +277,19 @@ export default function App() {
         <EndScreen won={g.status === 'won'} game={g} stats={stats}
           onNew={() => startGame(g.daily ? { difficulty: g.difficulty } : { difficulty: g.difficulty })}
           onRetry={() => dispatch({ type: 'restart' })}
+          onInvite={() => { setInviteId(ensureChallengeId()); setModal('invite'); }} onSendBack={sendResultBack}
           onHome={() => { saveGame(null); setView('home'); }} />
+      )}
+      {modal === 'invite' && g && (
+        <InviteSheet game={g} name={settings.playerName} onName={(n) => setSettings({ ...settings, playerName: n })} onClose={() => setModal(null)} challengeId={inviteId} />
+      )}
+      {modal === 'challenges' && <ChallengesSheet list={challenges} onClose={() => setModal(null)} />}
+      {incoming && (
+        <Sheet title="Challenge result" onClose={() => setIncoming(null)}>
+          <p className="mb-4 text-sm text-muted">{incoming.opponent || 'Your friend'} played your {incoming.difficulty} puzzle.</p>
+          <Compare me={{ time: incoming.myTime, mistakes: incoming.myMistakes }} them={{ time: incoming.theirTime, mistakes: incoming.theirMistakes }} theirName={incoming.opponent || 'Friend'} />
+          <button onClick={() => { setIncoming(null); setModal('challenges'); }} className="mt-5 w-full rounded-full bg-raised py-3 text-sm">All challenges</button>
+        </Sheet>
       )}
       {modal === 'stats' && <StatsSheet stats={stats} today={today} onClose={() => setModal(null)} />}
       {modal === 'settings' && (
@@ -211,16 +310,19 @@ function Tool({ icon, label, onClick, active, disabled }: { icon: string; label:
   );
 }
 
-function Home({ game, stats, today, onContinue, onStart, onModal, loading }: {
+function Home({ game, stats, today, onContinue, onStart, onModal, loading, onJoin, joinError }: {
+  onJoin: (v: string) => void; joinError: string;
   game: ReturnType<typeof loadGame>; stats: Stats; today: string; onContinue: () => void;
   onStart: (o: { difficulty?: Difficulty; daily?: string }) => void; onModal: (m: Modal) => void; loading: string | null;
 }) {
   const dailyDone = stats.daily[today] !== undefined;
   const streak = dailyStreaks(stats.daily, today);
   const canContinue = game && game.status === 'playing';
+  const [code, setCode] = useState('');
   return (
     <div className="safe-t safe-b flex flex-1 flex-col px-5">
       <div className="flex justify-end gap-1 pt-2">
+        <button className="rounded-full p-2.5 text-muted hover:bg-raised" onClick={() => onModal('challenges')} aria-label="Challenges"><Icon name="users" /></button>
         <button className="rounded-full p-2.5 text-muted hover:bg-raised" onClick={() => onModal('stats')} aria-label="Statistics"><Icon name="chart" /></button>
         <button className="rounded-full p-2.5 text-muted hover:bg-raised" onClick={() => onModal('settings')} aria-label="Settings"><Icon name="gear" /></button>
       </div>
@@ -255,6 +357,13 @@ function Home({ game, stats, today, onContinue, onStart, onModal, loading }: {
             </button>
           ))}
         </div>
+        <div className="mt-6 text-xs uppercase tracking-widest text-muted">Join a friend</div>
+        <form className="mt-2 flex gap-2" onSubmit={(e) => { e.preventDefault(); if (code.trim()) onJoin(code); }}>
+          <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Paste challenge code or link" aria-label="Challenge code"
+            className="min-w-0 flex-1 rounded-2xl border border-line bg-surface px-4 py-3 text-sm outline-none focus:border-accent" />
+          <button type="submit" disabled={!code.trim()} className="rounded-2xl bg-accent px-5 text-sm font-medium text-bg disabled:opacity-40">Join</button>
+        </form>
+        {joinError && <p className="mt-2 text-xs text-rose" role="alert">{joinError}</p>}
       </div>
     </div>
   );
@@ -272,9 +381,11 @@ function Logo() {
   );
 }
 
-function EndScreen({ won, game, stats, onNew, onRetry, onHome }: {
+function EndScreen({ won, game, stats, onNew, onRetry, onHome, onInvite, onSendBack }: {
   won: boolean; game: NonNullable<ReturnType<typeof loadGame>>; stats: Stats; onNew: () => void; onRetry: () => void; onHome: () => void;
+  onInvite: () => void; onSendBack: () => void;
 }) {
+  const ch = game.challenge;
   const d = stats.byDiff[game.difficulty];
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/75 p-6" role="dialog" aria-modal="true" aria-label={won ? 'Puzzle solved' : 'Game over'}>
@@ -289,8 +400,16 @@ function EndScreen({ won, game, stats, onNew, onRetry, onHome }: {
             <Stat k="Mistakes" v={String(game.mistakes)} />
           </div>
         )}
+        {ch?.role === 'guest' && (
+          <div className="mt-5">
+            <Compare me={{ time: won ? game.elapsed : null, mistakes: game.mistakes }} them={{ time: ch.theirTime, mistakes: ch.theirMistakes }} theirName={ch.opponent || 'Friend'} />
+          </div>
+        )}
         <div className="mt-6 flex flex-col gap-2">
-          {!won && <button onClick={onRetry} className="rounded-full bg-accent py-3 font-medium text-bg">Restart this puzzle</button>}
+          {ch?.role === 'guest'
+            ? <button onClick={onSendBack} className="flex items-center justify-center gap-2 rounded-full bg-accent py-3 font-medium text-bg"><Icon name="share" /> Send result back</button>
+            : won && <button onClick={onInvite} className="flex items-center justify-center gap-2 rounded-full border border-accent/50 py-3 font-medium text-accent"><Icon name="share" /> Challenge a friend</button>}
+          {!won && ch?.role !== 'guest' && <button onClick={onRetry} className="rounded-full bg-accent py-3 font-medium text-bg">Restart this puzzle</button>}
           <button onClick={onNew} className={`rounded-full py-3 font-medium ${won ? 'bg-accent text-bg' : 'bg-raised'}`}>New {game.difficulty} game</button>
           <button onClick={onHome} className="rounded-full py-3 text-muted">Menu</button>
         </div>

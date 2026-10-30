@@ -3,6 +3,7 @@ import { logicalSolve } from './logic';
 import { Rng, mulberry32, shuffle } from './rng';
 import { countSolutions, solve } from './solver';
 import bank from './bank.json';
+import { canonicalKey } from './canonical';
 
 import { DIFFICULTIES, type Difficulty, dailyKey } from './constants';
 export { DIFFICULTIES, dailyKey };
@@ -73,31 +74,35 @@ export function transform(puzzle: number[], solution: number[], rng: Rng) {
 const fromString = (s: string) => s.split('').map((ch) => (ch === '.' ? 0 : +ch));
 
 /**
- * Generate a puzzle of the requested difficulty. Easy–Hard are carved live (fast).
- * Expert/Master are rare under random carving, so after a short live budget we fall back to a
- * precomputed bank (made by this same generator, see scripts/build-bank.ts) plus a random transform,
- * which preserves both uniqueness and difficulty.
+ * Generate a puzzle of the requested difficulty that is NOT isomorphic to any puzzle in `seen`
+ * (canonical keys, see canonical.ts). Everything is carved live from a fresh random grid; for the rare
+ * Expert/Master grades we fall back to the deduplicated bank (plus a random transform) only after a time
+ * budget, skipping bank entries already seen, and keep generating live once the bank is exhausted.
  */
-export function generate(difficulty: Difficulty, rng: Rng = Math.random, budgetMs = 1500): Puzzle {
+export function generate(difficulty: Difficulty, rng: Rng = Math.random, budgetMs = 2500, seen: Set<string> = new Set()): Puzzle & { key: string } {
   const start = Date.now();
-  const live = difficulty === 'Easy' || difficulty === 'Medium' || difficulty === 'Hard';
-  let tries = 0;
-  while (live || (Date.now() - start < budgetMs && tries < 12)) {
-    tries++;
+  const rare = difficulty === 'Expert' || difficulty === 'Master';
+  let bankTried = false;
+  for (let tries = 1; ; tries++) {
+    if (rare && !bankTried && Date.now() - start > budgetMs) {
+      bankTried = true;
+      const list = ((bank as Record<string, string[][]>)[difficulty] ?? []).filter(([, , k]) => !seen.has(k));
+      if (list.length) {
+        const [ps, ss, bk] = list[Math.floor(rng() * list.length)];
+        const t = transform(fromString(ps), fromString(ss), rng);
+        return { ...t, difficulty, clues: t.puzzle.filter(Boolean).length, key: bk };
+      }
+    }
     const solution = generateSolved(rng);
     const p = carve(solution, rng);
     const g = grade(p);
-    if (difficulty === 'Easy' && (g === 'Easy' || g === 'Medium')) {
-      addClues(p, solution, 38 + Math.floor(rng() * 4), rng);
-      return { puzzle: p, solution, difficulty, clues: p.filter(Boolean).length };
-    }
-    if (g === difficulty) return { puzzle: p, solution, difficulty, clues: p.filter(Boolean).length };
-    if (live && tries > 400) break; // practically unreachable safety valve
+    let ok = g === difficulty;
+    if (difficulty === 'Easy' && (g === 'Easy' || g === 'Medium')) { addClues(p, solution, 38 + Math.floor(rng() * 4), rng); ok = true; }
+    if (!ok) continue;
+    const key = canonicalKey(p);
+    if (seen.has(key)) continue;
+    return { puzzle: p, solution, difficulty, clues: p.filter(Boolean).length, key };
   }
-  const list = (bank as Record<string, string[][]>)[difficulty];
-  const [ps, ss] = list[Math.floor(rng() * list.length)];
-  const t = transform(fromString(ps), fromString(ss), rng);
-  return { ...t, difficulty, clues: t.puzzle.filter(Boolean).length };
 }
 
 /** Same puzzle for everyone on a given date: deterministic seed from the date string. */
@@ -106,7 +111,7 @@ export function dailyPuzzle(key: string): Puzzle {
   for (let i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619); }
   const rng = mulberry32(h >>> 0);
   const diff: Difficulty = (['Medium', 'Hard', 'Hard', 'Expert'] as const)[Math.floor(rng() * 4)];
-  return generate(diff, rng, 0);
+  return generate(diff, rng, 1e9);
 }
 
 export { stringify };

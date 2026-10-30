@@ -12,6 +12,15 @@ A calm, ad-free Sudoku for the web and Android, made for Pixel phones. It has an
 
 ## Features
 
+### New in 1.2
+- **Challenge a friend.** Tap the share icon in a game (or "Challenge a friend" after you win) to send your exact puzzle as a `sudoku://play?c=…` link plus a short code. Your friend taps the link or pastes the code into **Join a friend** on home.
+- **Compare results.** When your friend finishes, they get a side-by-side card (time and mistakes) and can **Send result back**. Open it and you see who won. Every match is kept under **Challenges** on home.
+- **Private by design.** No server and no account. A link carries only the puzzle, the difficulty, your time and an optional name.
+- **No repeated puzzles.** Every puzzle you're served is fingerprinted in a way that ignores digit swaps, row and column shuffles and rotations. The same grid in disguise never comes back on any level.
+
+<p><img src="docs/invite.png" width="260"> <img src="docs/result.png" width="540"></p>
+
+
 **Puzzles**
 - Every puzzle has exactly one solution. It starts from a randomised backtracking fill, clues are removed in 180°-symmetric pairs, and a solution counter checks that the solution is still unique after each removal.
 - There are five difficulties: **Easy, Medium, Hard, Expert, Master**. They're graded by the techniques a human-style logical solver needs, not by clue count:
@@ -79,7 +88,8 @@ The minimum Android version is 7.0 (API 24). The adaptive icon has a monochrome 
 
 ## Download
 
-**[⬇ Download Sudoku 1.1 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.1/Sudoku-1.1-release.apk)** (1.10 MB). It's also in [`releases/`](releases/Sudoku-1.1-release.apk).
+**[⬇ Download Sudoku 1.2 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.2/Sudoku-1.2-release.apk)** (1.23 MB). It's also in [`releases/`](releases/Sudoku-1.2-release.apk).
+SHA-256: `8ea04353d19ebb89baf7f6572501f149beca03ed839ff95a7cddaf83afb3e18a`
 
 SHA-256: `9fde731c63420d2fe540447352ebe45c71cc2a57edb99b965670175d7a5066b6`
 

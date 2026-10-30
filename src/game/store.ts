@@ -6,13 +6,15 @@ export interface Game {
   id: string; difficulty: Difficulty; daily: string | null;
   puzzle: number[]; solution: number[]; values: number[]; notes: number[];
   mistakes: number; hints: number; elapsed: number; status: 'playing' | 'won' | 'lost';
+  challenge?: GameChallenge;
 }
+export interface GameChallenge { id: string; role: 'host' | 'guest'; opponent: string; theirTime: number | null; theirMistakes: number | null }
 export interface Settings {
   theme: string; mistakeCheck: boolean; mistakeLimit: boolean; haptics: boolean;
-  highlightSame: boolean; autoNotes: boolean; showTimer: boolean;
+  highlightSame: boolean; autoNotes: boolean; showTimer: boolean; playerName: string;
 }
 export const DEFAULT_SETTINGS: Settings = {
-  theme: 'sage', mistakeCheck: true, mistakeLimit: true, haptics: false, highlightSame: true, autoNotes: true, showTimer: true,
+  theme: 'sage', mistakeCheck: true, mistakeLimit: true, haptics: false, highlightSame: true, autoNotes: true, showTimer: true, playerName: '',
 };
 export const MAX_MISTAKES = 3;
 
@@ -25,7 +27,8 @@ export interface PlayState {
 }
 
 export type Action =
-  | { type: 'new'; puzzle: Puzzle; daily: string | null }
+  | { type: 'new'; puzzle: Puzzle; daily: string | null; challenge?: GameChallenge }
+  | { type: 'setChallenge'; challenge: GameChallenge }
   | { type: 'load'; game: Game }
   | { type: 'select'; cell: number }
   | { type: 'move'; dr: number; dc: number }
@@ -83,7 +86,7 @@ export function reducer(s: PlayState, a: Action): PlayState {
     const { puzzle, solution, difficulty } = a.puzzle;
     const game: Game = {
       id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, difficulty, daily: a.daily,
-      puzzle, solution, values: puzzle.slice(), notes: Array(81).fill(0), mistakes: 0, hints: 0, elapsed: 0, status: 'playing',
+      puzzle, solution, values: puzzle.slice(), notes: Array(81).fill(0), mistakes: 0, hints: 0, elapsed: 0, status: 'playing', challenge: a.challenge,
     };
     return { ...initialPlay, game, selected: puzzle.findIndex((v) => !v) };
   }
@@ -99,6 +102,7 @@ export function reducer(s: PlayState, a: Action): PlayState {
     }
     case 'tick': return g.status === 'playing' && !s.paused ? { ...s, game: { ...g, elapsed: g.elapsed + a.ms } } : s;
     case 'pause': return { ...s, paused: a.paused };
+    case 'setChallenge': return { ...s, game: { ...g, challenge: a.challenge } };
     case 'clearMessage': return { ...s, message: null, hintCells: [] };
     case 'restart':
       return { ...initialPlay, game: { ...g, values: g.puzzle.slice(), notes: Array(81).fill(0), mistakes: 0, hints: 0, elapsed: 0, status: 'playing' } };
