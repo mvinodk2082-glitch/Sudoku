@@ -12,6 +12,11 @@ A calm, ad-free Sudoku for the web and Android, made for Pixel phones. It has an
 
 ## Features
 
+### New in 1.5
+
+- **Pixel-quality haptics.** A native Android path replaces the old generic impact buzz: composition primitives (tick, low tick, click, slow rise) when the phone supports them, then system haptic constants, then predefined effects, then a single ≤14 ms low-amplitude pulse. Each action has its own feel (light tick to select, crisp click to place, low tick for notes/erase/undo, soft double low-tick for a mistake, short rising roll when you finish a row/column/box, a gentle flourish when solved). Fast taps are throttled, and the system touch-feedback setting is respected.
+- Settings → Haptic feedback: **Off / Subtle (default) / Strong**. In a browser only Strong vibrates, with 5–12 ms pulses.
+
 ### New in 1.4
 
 - **E-ink theme** for e-paper phones and readers: white paper, black ink, greys only. Selection is a thick black box, mistakes are struck through with a hatched cell, 3×3 lines are heavier, and all animations, transitions, shadows and blur are switched off to avoid ghosting. System bars go light.
@@ -58,7 +63,7 @@ A calm, ad-free Sudoku for the web and Android, made for Pixel phones. It has an
 **Design and accessibility**
 - AMOLED true black `#000000`, soft greys and one muted sage accent `#8FA89A`. Given digits are soft white, your digits are sage and errors are muted rose.
 - Thick 3×3 lines and large digits. Subtle animations: cells pop in, a completed row, column or box glows gently, and the win screen is calm.
-- **Ten themes** with a live mini-board preview in Settings: AMOLED Sage (default), AMOLED Slate, AMOLED Sand, AMOLED Lavender, Midnight, Graphite, Paper, Mist, E-ink, and Material You, which follows your phone's light or dark mode. The Android status and navigation bars match the theme. Haptics are optional and off by default.
+- **Ten themes** with a live mini-board preview in Settings: AMOLED Sage (default), AMOLED Slate, AMOLED Sand, AMOLED Lavender, Midnight, Graphite, Paper, Mist, E-ink, and Material You, which follows your phone's light or dark mode. The Android status and navigation bars match the theme. Haptics have Off / Subtle / Strong levels (Subtle by default).
 - The number pad sits at the bottom so you can play one-handed.
 - ARIA grid and cell labels, a live region for announcements, and focus-visible outlines.
 
@@ -104,7 +109,7 @@ The minimum Android version is 7.0 (API 24). The adaptive icon has a monochrome 
 
 **▶ Play in the browser: https://mvinodk2082-glitch.github.io/sudoku-play/**
 
-**[⬇ Download Sudoku 1.4 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.4/Sudoku-1.4-release.apk)** (1.23 MB). It's also in [`releases/`](releases/Sudoku-1.4-release.apk).
+**[⬇ Download Sudoku 1.5 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.5/Sudoku-1.5-release.apk)** (1.23 MB). It's also in [`releases/`](releases/Sudoku-1.5-release.apk).
 SHA-256: `8d6c5566d2577d27791a84492bf2a87acd082e3b23cdf6a9bf9a23cd96b5b2e0`
 
 SHA-256: `9fde731c63420d2fe540447352ebe45c71cc2a57edb99b965670175d7a5066b6`

@@ -1,3 +1,4 @@
+import { normalizeLevel, type HapticLevel } from '../haptics';
 import { BOXES, COLS, PEERS, ROWS, boxOf, cellName, colOf, rowOf } from '../engine/core';
 import type { Difficulty, Puzzle } from '../engine/generator';
 import { nextHint } from '../engine/logic';
@@ -10,11 +11,11 @@ export interface Game {
 }
 export interface GameChallenge { id: string; role: 'host' | 'guest'; opponent: string; theirTime: number | null; theirMistakes: number | null }
 export interface Settings {
-  theme: string; mistakeCheck: boolean; mistakeLimit: boolean; haptics: boolean;
+  theme: string; mistakeCheck: boolean; mistakeLimit: boolean; haptics: HapticLevel;
   highlightSame: boolean; autoNotes: boolean; showTimer: boolean; playerName: string;
 }
 export const DEFAULT_SETTINGS: Settings = {
-  theme: 'sage', mistakeCheck: true, mistakeLimit: true, haptics: false, highlightSame: true, autoNotes: true, showTimer: true, playerName: '',
+  theme: 'sage', mistakeCheck: true, mistakeLimit: true, haptics: 'subtle', highlightSame: true, autoNotes: true, showTimer: true, playerName: '',
 };
 export const MAX_MISTAKES = 3;
 
@@ -177,7 +178,7 @@ export const loadGame = (): Game | null => {
 export const saveGame = (g: Game | null) => {
   try { g ? localStorage.setItem(K.game, JSON.stringify(g)) : localStorage.removeItem(K.game); } catch { /* quota */ }
 };
-export const loadSettings = () => read<Settings>(K.settings, DEFAULT_SETTINGS);
+export const loadSettings = (): Settings => { const s = read<Settings>(K.settings, DEFAULT_SETTINGS); return { ...s, haptics: normalizeLevel(s.haptics) }; };
 export const saveSettings = (s: Settings) => localStorage.setItem(K.settings, JSON.stringify(s));
 
 export interface DiffStats { played: number; won: number; totalTime: number; best: number | null; streak: number; bestStreak: number }

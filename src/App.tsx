@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { haptic, inputFeel, type Feel } from './haptics';
 import { Board } from './Board';
 import { DIFFICULTIES, Difficulty, dailyKey } from './engine/constants';
 import { requestPuzzle } from './game/generate';
 import {
   MAX_MISTAKES, Settings, Stats, dailyStreaks, emptyStats, fmtTime, initialPlay, loadGame, loadSettings, loadStats,
-  recordResult, reducer, saveGame, saveSettings, saveStats,
+  type Action, recordResult, reducer, saveGame, saveSettings, saveStats,
 } from './game/store';
 import { Icon, Sheet, Toggle } from './ui';
 import { App as CapApp } from '@capacitor/app';
@@ -65,10 +65,27 @@ export default function App() {
     if (g && g.status !== 'playing') setStats((st) => recordResult(st, g, g.status === 'won'));
   }, [g?.status, g]);
 
-  const buzz = useCallback((strong = false) => {
-    if (!settings.haptics) return;
-    Haptics.impact({ style: strong ? ImpactStyle.Medium : ImpactStyle.Light }).catch(() => navigator.vibrate?.(strong ? 30 : 10));
-  }, [settings.haptics]);
+  const feel = useCallback((f: Feel | null) => haptic(f, settings.haptics), [settings.haptics]);
+  /** Dispatch a board action and play the haptic that matches what it actually did. */
+  const act = useCallback((a: Action) => {
+    if (s.game && (a.type === 'input' || a.type === 'hint')) {
+      const next = reducer(s, a);
+      const cell = a.type === 'input' ? s.selected : next.game!.values.findIndex((v, i) => v !== s.game!.values[i]);
+      if (next.game && cell >= 0) feel(inputFeel(s.game, next.game, cell, next.game.status === 'won' && s.game.status !== 'won'));
+    } else if (a.type === 'select') feel('select');
+    else if (a.type === 'erase' || a.type === 'undo' || a.type === 'redo') feel('low');
+    else if (a.type === 'notes') feel('key');
+    dispatch(a);
+  }, [s, feel]);
+  // Menu/sheet buttons outside the board get a light virtual-key tap.
+  useEffect(() => {
+    const on = (e: PointerEvent) => {
+      const b = (e.target as Element | null)?.closest?.('button');
+      if (b && !b.disabled && !b.closest('[data-haptic-own]')) feel('key');
+    };
+    document.addEventListener('pointerdown', on, true);
+    return () => document.removeEventListener('pointerdown', on, true);
+  }, [feel]);
 
   const startGame = async (opts: { difficulty?: Difficulty; daily?: string }) => {
     if (g && g.status === 'playing' && g.values.some((v, i) => v !== g.puzzle[i]) && g.daily !== opts.daily) {
@@ -151,7 +168,7 @@ export default function App() {
     await shareText('Sudoku result', `${who} ${g.status === 'won' ? `solved your ${g.difficulty} challenge in ${fmtTime(g.elapsed)}` : `didn't finish your ${g.difficulty} challenge`} (${g.mistakes} mistakes).\n\nSee the comparison: ${challengeLink(code)}\n\nOr open Sudoku → Join with code and paste:\n${code}`);
   };
 
-  const input = useCallback((d: number) => { dispatch({ type: 'input', digit: d, settings }); buzz(); }, [settings, buzz]);
+  const input = useCallback((d: number) => act({ type: 'input', digit: d, settings }), [settings, act]);
 
   // Keyboard support.
   useEffect(() => {
@@ -160,22 +177,22 @@ export default function App() {
       if (modal) return;
       const k = e.key;
       if (k >= '1' && k <= '9') input(+k);
-      else if (k === 'Backspace' || k === 'Delete' || k === '0') dispatch({ type: 'erase' });
+      else if (k === 'Backspace' || k === 'Delete' || k === '0') act({ type: 'erase' });
       else if (k === 'ArrowUp') dispatch({ type: 'move', dr: -1, dc: 0 });
       else if (k === 'ArrowDown') dispatch({ type: 'move', dr: 1, dc: 0 });
       else if (k === 'ArrowLeft') dispatch({ type: 'move', dr: 0, dc: -1 });
       else if (k === 'ArrowRight') dispatch({ type: 'move', dr: 0, dc: 1 });
-      else if (k === 'n' || k === 'N') dispatch({ type: 'notes' });
-      else if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'z') dispatch({ type: e.shiftKey ? 'redo' : 'undo' });
-      else if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'y') dispatch({ type: 'redo' });
-      else if (k === 'h') dispatch({ type: 'hint', settings });
+      else if (k === 'n' || k === 'N') act({ type: 'notes' });
+      else if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'z') act({ type: e.shiftKey ? 'redo' : 'undo' });
+      else if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'y') act({ type: 'redo' });
+      else if (k === 'h') act({ type: 'hint', settings });
       else if (k === ' ' || k === 'p') dispatch({ type: 'pause', paused: !s.paused });
       else return;
       e.preventDefault();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [view, modal, input, settings, s.paused]);
+  }, [view, modal, input, act, settings, s.paused]);
 
   // Screen-reader announcements for the selected cell.
   useEffect(() => {
@@ -184,7 +201,6 @@ export default function App() {
     setAnnounce(`Row ${Math.floor(s.selected / 9) + 1}, column ${(s.selected % 9) + 1}: ${v || 'empty'}`);
   }, [s.selected, g]);
   useEffect(() => { if (s.message) setAnnounce(s.message.text); }, [s.message]);
-  useEffect(() => { if (g?.status === 'won') buzz(true); }, [g?.status, buzz, g]);
 
   const remaining = useMemo(() => {
     const r = Array(10).fill(9);
@@ -236,7 +252,7 @@ export default function App() {
               </div>
             )}
             <div className="relative mx-auto w-full" style={{ maxWidth: 'min(100%, calc(100dvh - 330px))', minWidth: 'min(100%, 280px)' }}>
-              <Board s={s} settings={settings} onSelect={(i) => dispatch({ type: 'select', cell: i })} />
+              <Board s={s} settings={settings} onSelect={(i) => act({ type: 'select', cell: i })} />
               {s.paused && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
                   <div className="text-sm text-muted">Paused · {fmtTime(g.elapsed)}</div>
@@ -257,14 +273,14 @@ export default function App() {
           </main>
 
           <footer className="safe-b px-2">
-            <div className="mb-2 grid grid-cols-5 gap-1">
-              <Tool icon="undo" label="Undo" onClick={() => dispatch({ type: 'undo' })} disabled={!s.past.length} />
-              <Tool icon="erase" label="Erase" onClick={() => dispatch({ type: 'erase' })} />
-              <Tool icon="pencil" label={s.notesMode ? 'Notes on' : 'Notes'} onClick={() => dispatch({ type: 'notes' })} active={s.notesMode} />
-              <Tool icon="bulb" label="Hint" onClick={() => { dispatch({ type: 'hint', settings }); buzz(); }} />
-              <Tool icon="redo" label="Redo" onClick={() => dispatch({ type: 'redo' })} disabled={!s.future.length} />
+            <div className="mb-2 grid grid-cols-5 gap-1" data-haptic-own>
+              <Tool icon="undo" label="Undo" onClick={() => act({ type: 'undo' })} disabled={!s.past.length} />
+              <Tool icon="erase" label="Erase" onClick={() => act({ type: 'erase' })} />
+              <Tool icon="pencil" label={s.notesMode ? 'Notes on' : 'Notes'} onClick={() => act({ type: 'notes' })} active={s.notesMode} />
+              <Tool icon="bulb" label="Hint" onClick={() => { act({ type: 'hint', settings }); }} />
+              <Tool icon="redo" label="Redo" onClick={() => act({ type: 'redo' })} disabled={!s.future.length} />
             </div>
-            <div className="grid grid-cols-9 gap-1" role="group" aria-label="Number pad">
+            <div className="grid grid-cols-9 gap-1" role="group" aria-label="Number pad" data-haptic-own>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => {
                 const done = remaining[d] <= 0;
                 return (
@@ -506,7 +522,17 @@ function SettingsSheet({ settings, onChange, onClose, onReset }: { settings: Set
         <Toggle label="Highlight same digits" checked={settings.highlightSame} onChange={(v) => set('highlightSame', v)} />
         <Toggle label="Auto-remove notes" desc="Clear a digit from notes in its row, column and box" checked={settings.autoNotes} onChange={(v) => set('autoNotes', v)} />
         <Toggle label="Show timer" checked={settings.showTimer} onChange={(v) => set('showTimer', v)} />
-        <Toggle label="Haptic feedback" checked={settings.haptics} onChange={(v) => set('haptics', v)} />
+        <div className="py-3">
+          <span className="block text-[15px]">Haptic feedback</span>
+          <span className="block text-xs text-muted">Light ticks and clicks, never long buzzes{Capacitor.isNativePlatform() ? '' : '. In a browser only Strong vibrates.'}</span>
+          <div className="mt-2 grid grid-cols-3 gap-1 rounded-full bg-raised p-1" role="radiogroup" aria-label="Haptic feedback">
+            {(['off', 'subtle', 'strong'] as const).map((h) => (
+              <button key={h} role="radio" aria-checked={settings.haptics === h} data-haptic-own
+                onClick={() => { set('haptics', h); haptic(h === 'off' ? null : 'place', h); }}
+                className={`rounded-full py-1.5 text-sm capitalize ${settings.haptics === h ? 'bg-surface text-text' : 'text-muted'}`}>{h}</button>
+            ))}
+          </div>
+        </div>
       </div>
       <button onClick={onReset} className="mt-4 w-full rounded-full border border-rose/40 py-3 text-sm text-rose">Reset statistics</button>
       <p className="mt-4 text-center text-xs text-muted">Keyboard: 1–9, arrows, Backspace, N notes, H hint, Space pause, Ctrl+Z / Ctrl+Y</p>
