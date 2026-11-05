@@ -3,6 +3,7 @@ import { haptic, inputFeel, type Feel } from './haptics';
 import { Board } from './Board';
 import { DIFFICULTIES, Difficulty, dailyKey } from './engine/constants';
 import { requestPuzzle } from './game/generate';
+import { INKALA_CREDIT, INKALA_ID, INKALA_LABEL, inkalaPuzzle } from './engine/inkala';
 import {
   MAX_MISTAKES, Settings, Stats, dailyStreaks, emptyStats, fmtTime, initialPlay, loadGame, loadSettings, loadStats,
   type Action, recordResult, reducer, saveGame, saveSettings, saveStats,
@@ -87,15 +88,24 @@ export default function App() {
     return () => document.removeEventListener('pointerdown', on, true);
   }, [feel]);
 
-  const startGame = async (opts: { difficulty?: Difficulty; daily?: string }) => {
-    if (g && g.status === 'playing' && g.values.some((v, i) => v !== g.puzzle[i]) && g.daily !== opts.daily) {
+  const startGame = async (opts: { difficulty?: Difficulty; daily?: string; named?: string }) => {
+    if (g && g.status === 'playing' && g.values.some((v, i) => v !== g.puzzle[i]) && g.daily !== opts.daily && g.named !== opts.named) {
       setStats((st) => recordResult(st, g, false)); // abandoned game counts as played, breaks streak
     }
     setModal(null);
+    if (opts.named === INKALA_ID) {
+      setLoading(INKALA_LABEL);
+      const puzzle = inkalaPuzzle();
+      // Named fixed challenge: always replayable, never burns the random no-repeat pool.
+      dispatch({ type: 'new', puzzle, daily: null, named: INKALA_ID });
+      setLoading(null);
+      setView('game');
+      return;
+    }
     setLoading(opts.daily ? 'Daily challenge' : opts.difficulty!);
     const puzzle = await requestPuzzle(opts);
-    markSeen(puzzle.difficulty, puzzle.key); // never serve this combination again at this level
-    dispatch({ type: 'new', puzzle, daily: opts.daily ?? null });
+    markSeen(puzzle.difficulty, puzzle.key); // never serve this combination again at that level
+    dispatch({ type: 'new', puzzle, daily: opts.daily ?? null, named: null });
     setLoading(null);
     setView('game');
   };
@@ -114,7 +124,7 @@ export default function App() {
       setChallenges(upsertChallenge({ id: c.id, role: 'guest', difficulty: c.difficulty, puzzle: c.puzzle.join(''), opponent: c.hostName,
         theirTime: c.hostTime, theirMistakes: c.hostMistakes }));
       import('./engine/canonical').then(({ canonicalKey }) => markSeen(c.difficulty, canonicalKey(c.puzzle)));
-      dispatch({ type: 'new', puzzle: { puzzle: c.puzzle, solution: c.solution, difficulty: c.difficulty, clues: c.puzzle.filter(Boolean).length }, daily: null,
+      dispatch({ type: 'new', puzzle: { puzzle: c.puzzle, solution: c.solution, difficulty: c.difficulty, clues: c.puzzle.filter(Boolean).length }, daily: null, named: null,
         challenge: { id: c.id, role: 'guest', opponent: c.hostName, theirTime: c.hostTime, theirMistakes: c.hostMistakes } });
       setModal(null); setView('game');
     } else {
@@ -220,8 +230,9 @@ export default function App() {
           <header className="safe-t flex items-center justify-between px-3 pb-2">
             <button className="rounded-full p-2.5 text-muted hover:bg-raised" onClick={() => setView('home')} aria-label="Back to menu"><Icon name="back" /></button>
             <div className="text-center">
-              <div className="text-sm font-medium">{g.daily ? `Daily · ${g.difficulty}` : g.difficulty}</div>
+              <div className="text-sm font-medium">{g.named === INKALA_ID ? INKALA_LABEL : g.daily ? `Daily · ${g.difficulty}` : g.difficulty}</div>
               <div className="text-xs text-muted">
+                {g.named === INKALA_ID ? `${INKALA_CREDIT} · ` : ''}
                 {settings.mistakeCheck ? `Mistakes ${g.mistakes}${settings.mistakeLimit ? `/${MAX_MISTAKES}` : ''}` : 'Mistake check off'}
                 {g.hints ? ` · Hints ${g.hints}` : ''}
               </div>
@@ -299,7 +310,7 @@ export default function App() {
 
       {g && g.status !== 'playing' && view === 'game' && (
         <EndScreen won={g.status === 'won'} game={g} stats={stats}
-          onNew={() => startGame(g.daily ? { difficulty: g.difficulty } : { difficulty: g.difficulty })}
+          onNew={() => startGame(g.named === INKALA_ID ? { named: INKALA_ID } : { difficulty: g.difficulty })}
           onRetry={() => dispatch({ type: 'restart' })}
           onInvite={() => { setInviteId(ensureChallengeId()); setModal('invite'); }} onSendBack={sendResultBack}
           onHome={() => { saveGame(null); setView('home'); }} />
@@ -337,7 +348,7 @@ function Tool({ icon, label, onClick, active, disabled }: { icon: string; label:
 function Home({ game, stats, today, onContinue, onStart, onModal, loading, onJoin, joinError }: {
   onJoin: (v: string) => void; joinError: string;
   game: ReturnType<typeof loadGame>; stats: Stats; today: string; onContinue: () => void;
-  onStart: (o: { difficulty?: Difficulty; daily?: string }) => void; onModal: (m: Modal) => void; loading: string | null;
+  onStart: (o: { difficulty?: Difficulty; daily?: string; named?: string }) => void; onModal: (m: Modal) => void; loading: string | null;
 }) {
   const dailyDone = stats.daily[today] !== undefined;
   const streak = dailyStreaks(stats.daily, today);
@@ -365,9 +376,18 @@ function Home({ game, stats, today, onContinue, onStart, onModal, loading, onJoi
           {dailyDone && <span className="text-accent">✓</span>}
         </button>
 
+        <button onClick={() => onStart({ named: INKALA_ID })} disabled={!!loading}
+          className="mt-3 flex items-center gap-4 rounded-2xl border border-line bg-surface p-4 text-left hover:bg-raised">
+          <span className="rounded-xl bg-raised p-3 text-text"><Icon name="flame" className="h-6 w-6" /></span>
+          <span className="flex-1">
+            <span className="block font-medium">{INKALA_LABEL}</span>
+            <span className="block text-xs text-muted">{INKALA_CREDIT}</span>
+          </span>
+        </button>
+
         {canContinue && (
           <button onClick={onContinue} className="mt-3 rounded-2xl bg-accent p-4 text-left font-medium text-bg">
-            Continue · {game!.daily ? 'Daily' : game!.difficulty} · {fmtTime(game!.elapsed)}
+            Continue · {game!.named === INKALA_ID ? INKALA_LABEL : game!.daily ? 'Daily' : game!.difficulty} · {fmtTime(game!.elapsed)}
           </button>
         )}
 
@@ -416,11 +436,11 @@ function EndScreen({ won, game, stats, onNew, onRetry, onHome, onInvite, onSendB
       <div className="w-full max-w-sm animate-fadein rounded-3xl border border-line bg-surface p-6 text-center">
         <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${won ? 'bg-accent/15 text-accent' : 'bg-rose/15 text-rose'} text-2xl`}>{won ? '✓' : '×'}</div>
         <h2 className="text-2xl font-light">{won ? 'Solved' : 'Three mistakes'}</h2>
-        <p className="mt-1 text-sm text-muted">{won ? `${game.daily ? 'Daily · ' : ''}${game.difficulty} in ${fmtTime(game.elapsed)}` : 'Take a breath and try again.'}</p>
+        <p className="mt-1 text-sm text-muted">{won ? `${game.named === INKALA_ID ? INKALA_LABEL : `${game.daily ? 'Daily · ' : ''}${game.difficulty}`} in ${fmtTime(game.elapsed)}` : 'Take a breath and try again.'}</p>
         {won && (
-          <div className="mt-5 grid grid-cols-3 gap-2 text-sm">
-            <Stat k="Best" v={d.best !== null ? fmtTime(d.best) : '—'} />
-            <Stat k="Streak" v={String(d.streak)} />
+          <div className={`mt-5 grid gap-2 text-sm ${game.named ? 'grid-cols-1' : 'grid-cols-3'}`}>
+            {!game.named && <Stat k="Best" v={d.best !== null ? fmtTime(d.best) : '—'} />}
+            {!game.named && <Stat k="Streak" v={String(d.streak)} />}
             <Stat k="Mistakes" v={String(game.mistakes)} />
           </div>
         )}
@@ -434,7 +454,7 @@ function EndScreen({ won, game, stats, onNew, onRetry, onHome, onInvite, onSendB
             ? <button onClick={onSendBack} className="flex items-center justify-center gap-2 rounded-full bg-accent py-3 font-medium text-bg"><Icon name="share" /> Send result back</button>
             : won && <button onClick={onInvite} className="flex items-center justify-center gap-2 rounded-full border border-accent/50 py-3 font-medium text-accent"><Icon name="share" /> Challenge a friend</button>}
           {!won && ch?.role !== 'guest' && <button onClick={onRetry} className="rounded-full bg-accent py-3 font-medium text-bg">Restart this puzzle</button>}
-          <button onClick={onNew} className={`rounded-full py-3 font-medium ${won ? 'bg-accent text-bg' : 'bg-raised'}`}>New {game.difficulty} game</button>
+          <button onClick={onNew} className={`rounded-full py-3 font-medium ${won ? 'bg-accent text-bg' : 'bg-raised'}`}>{game.named === INKALA_ID ? 'Play again' : `New ${game.difficulty} game`}</button>
           <button onClick={onHome} className="rounded-full py-3 text-muted">Menu</button>
         </div>
       </div>

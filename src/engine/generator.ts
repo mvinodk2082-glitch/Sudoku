@@ -4,6 +4,7 @@ import { Rng, mulberry32, shuffle } from './rng';
 import { countSolutions, solve } from './solver';
 import bank from './bank.json';
 import { canonicalKey } from './canonical';
+import { RESERVED_KEYS } from './inkala';
 
 import { DIFFICULTIES, type Difficulty, dailyKey } from './constants';
 export { DIFFICULTIES, dailyKey };
@@ -86,7 +87,7 @@ export function generate(difficulty: Difficulty, rng: Rng = Math.random, budgetM
   for (let tries = 1; ; tries++) {
     if (rare && !bankTried && Date.now() - start > budgetMs) {
       bankTried = true;
-      const list = ((bank as Record<string, string[][]>)[difficulty] ?? []).filter(([, , k]) => !seen.has(k));
+      const list = ((bank as Record<string, string[][]>)[difficulty] ?? []).filter(([, , k]) => !seen.has(k) && !RESERVED_KEYS.has(k));
       if (list.length) {
         const [ps, ss, bk] = list[Math.floor(rng() * list.length)];
         const t = transform(fromString(ps), fromString(ss), rng);
@@ -100,7 +101,7 @@ export function generate(difficulty: Difficulty, rng: Rng = Math.random, budgetM
     if (difficulty === 'Easy' && (g === 'Easy' || g === 'Medium')) { addClues(p, solution, 38 + Math.floor(rng() * 4), rng); ok = true; }
     if (!ok) continue;
     const key = canonicalKey(p);
-    if (seen.has(key)) continue;
+    if (seen.has(key) || RESERVED_KEYS.has(key)) continue;
     return { puzzle: p, solution, difficulty, clues: p.filter(Boolean).length, key };
   }
 }

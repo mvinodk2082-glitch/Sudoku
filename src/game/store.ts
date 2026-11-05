@@ -4,7 +4,7 @@ import type { Difficulty, Puzzle } from '../engine/generator';
 import { nextHint } from '../engine/logic';
 
 export interface Game {
-  id: string; difficulty: Difficulty; daily: string | null;
+  id: string; difficulty: Difficulty; daily: string | null; named: string | null;
   puzzle: number[]; solution: number[]; values: number[]; notes: number[];
   mistakes: number; hints: number; elapsed: number; status: 'playing' | 'won' | 'lost';
   challenge?: GameChallenge;
@@ -28,7 +28,7 @@ export interface PlayState {
 }
 
 export type Action =
-  | { type: 'new'; puzzle: Puzzle; daily: string | null; challenge?: GameChallenge }
+  | { type: 'new'; puzzle: Puzzle; daily: string | null; named?: string | null; challenge?: GameChallenge }
   | { type: 'setChallenge'; challenge: GameChallenge }
   | { type: 'load'; game: Game }
   | { type: 'select'; cell: number }
@@ -86,7 +86,7 @@ export function reducer(s: PlayState, a: Action): PlayState {
   if (a.type === 'new') {
     const { puzzle, solution, difficulty } = a.puzzle;
     const game: Game = {
-      id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, difficulty, daily: a.daily,
+      id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, difficulty, daily: a.daily, named: a.named ?? null,
       puzzle, solution, values: puzzle.slice(), notes: Array(81).fill(0), mistakes: 0, hints: 0, elapsed: 0, status: 'playing', challenge: a.challenge,
     };
     return { ...initialPlay, game, selected: puzzle.findIndex((v) => !v) };
@@ -173,7 +173,12 @@ const read = <T,>(k: string, fallback: T): T => {
   try { const v = localStorage.getItem(k); return v ? { ...fallback, ...JSON.parse(v) } : fallback; } catch { return fallback; }
 };
 export const loadGame = (): Game | null => {
-  try { const v = localStorage.getItem(K.game); return v ? JSON.parse(v) : null; } catch { return null; }
+  try {
+    const v = localStorage.getItem(K.game);
+    if (!v) return null;
+    const g = JSON.parse(v) as Game;
+    return { ...g, named: g.named ?? null };
+  } catch { return null; }
 };
 export const saveGame = (g: Game | null) => {
   try { g ? localStorage.setItem(K.game, JSON.stringify(g)) : localStorage.removeItem(K.game); } catch { /* quota */ }
@@ -197,6 +202,8 @@ export const saveStats = (s: Stats) => localStorage.setItem(K.stats, JSON.string
 /** Record a finished (or abandoned) game exactly once. */
 export function recordResult(stats: Stats, g: Game, won: boolean): Stats {
   if (stats.counted.includes(g.id)) return stats;
+  // Named fixed challenges (Inkala) don't touch the random-level stats buckets.
+  if (g.named) return { ...stats, counted: [...stats.counted, g.id].slice(-500) };
   const d = { ...stats.byDiff[g.difficulty] };
   d.played++;
   if (won) {
