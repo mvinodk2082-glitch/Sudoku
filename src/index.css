@@ -30,3 +30,11 @@ button:focus-visible { outline: 2px solid rgb(var(--accent)); outline-offset: 2p
 [data-theme=eink] .is-wrong { background-image: repeating-linear-gradient(45deg, transparent 0 5px, rgba(0,0,0,.28) 5px 6px) !important; }
 [data-theme=eink] .wrong-digit { font-weight: 800; text-decoration: line-through; text-decoration-thickness: 2px; }
 [data-theme=eink] .animate-glow { display: none; }
+
+/* Soft win pulse — a quiet breath of the accent colour around the board. Disabled for E-ink. */
+@keyframes win-pulse {
+  0% { box-shadow: 0 0 0 0 rgb(var(--accent) / 0); }
+  35% { box-shadow: 0 0 0 6px rgb(var(--accent) / 0.28); }
+  100% { box-shadow: 0 0 0 0 rgb(var(--accent) / 0); }
+}
+.win-pulse { animation: win-pulse 1.1s ease-out 1; }

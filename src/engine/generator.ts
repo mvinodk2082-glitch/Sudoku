@@ -4,7 +4,7 @@ import { Rng, mulberry32, shuffle } from './rng';
 import { countSolutions, solve } from './solver';
 import bank from './bank.json';
 import { canonicalKey } from './canonical';
-import { RESERVED_KEYS } from './inkala';
+import { RESERVED_KEYS } from './legends';
 
 import { DIFFICULTIES, type Difficulty, dailyKey } from './constants';
 export { DIFFICULTIES, dailyKey };

@@ -3,9 +3,9 @@ import { haptic, inputFeel, type Feel } from './haptics';
 import { Board } from './Board';
 import { DIFFICULTIES, Difficulty, dailyKey } from './engine/constants';
 import { requestPuzzle } from './game/generate';
-import { INKALA_CREDIT, INKALA_ID, INKALA_LABEL, inkalaPuzzle } from './engine/inkala';
+import { LEGENDS, legendById, legendPuzzle } from './engine/legends';
 import {
-  MAX_MISTAKES, Settings, Stats, dailyStreaks, emptyStats, fmtTime, initialPlay, loadGame, loadSettings, loadStats,
+  MAX_MISTAKES, Settings, Stats, dailyStreaks, emptyStats, fmtTime, initialPlay, loadClears, loadGame, loadSettings, loadStats, markCleared,
   type Action, recordResult, reducer, saveGame, saveSettings, saveStats,
 } from './game/store';
 import { Icon, Sheet, Toggle } from './ui';
@@ -21,6 +21,8 @@ type Modal = null | 'stats' | 'settings' | 'new' | 'invite' | 'challenges';
 export default function App() {
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [stats, setStats] = useState<Stats>(loadStats);
+  const [clears, setClears] = useState(loadClears);
+  const [firstClear, setFirstClear] = useState(false);
   const [s, dispatch] = useReducer(reducer, initialPlay, (init) => {
     const g = loadGame();
     return g && g.status === 'playing' ? reducer(init, { type: 'load', game: g }) : init;
@@ -63,7 +65,13 @@ export default function App() {
 
   // Record results once.
   useEffect(() => {
-    if (g && g.status !== 'playing') setStats((st) => recordResult(st, g, g.status === 'won'));
+    if (!g || g.status === 'playing') return;
+    setStats((st) => recordResult(st, g, g.status === 'won'));
+    if (g.status === 'won' && g.named) {
+      const first = markCleared(g.named);
+      if (first) { setClears(loadClears()); setFirstClear(true); }
+      else setFirstClear(false);
+    } else setFirstClear(false);
   }, [g?.status, g]);
 
   const feel = useCallback((f: Feel | null) => haptic(f, settings.haptics), [settings.haptics]);
@@ -93,11 +101,13 @@ export default function App() {
       setStats((st) => recordResult(st, g, false)); // abandoned game counts as played, breaks streak
     }
     setModal(null);
-    if (opts.named === INKALA_ID) {
-      setLoading(INKALA_LABEL);
-      const puzzle = inkalaPuzzle();
+    if (opts.named) {
+      const legend = legendById(opts.named);
+      const puzzle = legendPuzzle(opts.named);
+      if (!legend || !puzzle) return;
+      setLoading(legend.label);
       // Named fixed challenge: always replayable, never burns the random no-repeat pool.
-      dispatch({ type: 'new', puzzle, daily: null, named: INKALA_ID });
+      dispatch({ type: 'new', puzzle, daily: null, named: legend.id });
       setLoading(null);
       setView('game');
       return;
@@ -222,7 +232,7 @@ export default function App() {
     <div className="mx-auto flex h-[100dvh] max-w-[560px] flex-col">
       <div className="sr-only" aria-live="polite">{announce}</div>
       {view === 'home' || !g ? (
-        <Home game={g} stats={stats} today={today} onContinue={() => { dispatch({ type: 'pause', paused: false }); setView('game'); }}
+        <Home game={g} stats={stats} today={today} clears={clears} onContinue={() => { dispatch({ type: 'pause', paused: false }); setView('game'); }}
           onStart={startGame} onModal={setModal} loading={loading}
           onJoin={(v) => { if (!handleCode(v)) setJoinError('That code isn’t a valid Sudoku challenge.'); }} joinError={joinError} />
       ) : (
@@ -230,9 +240,9 @@ export default function App() {
           <header className="safe-t flex items-center justify-between px-3 pb-2">
             <button className="rounded-full p-2.5 text-muted hover:bg-raised" onClick={() => setView('home')} aria-label="Back to menu"><Icon name="back" /></button>
             <div className="text-center">
-              <div className="text-sm font-medium">{g.named === INKALA_ID ? INKALA_LABEL : g.daily ? `Daily · ${g.difficulty}` : g.difficulty}</div>
+              <div className="text-sm font-medium">{g.named ? (legendById(g.named)?.label ?? g.named) : g.daily ? `Daily · ${g.difficulty}` : g.difficulty}</div>
               <div className="text-xs text-muted">
-                {g.named === INKALA_ID ? `${INKALA_CREDIT} · ` : ''}
+                {g.named ? `${legendById(g.named)?.credit ?? ''} · ` : ''}
                 {settings.mistakeCheck ? `Mistakes ${g.mistakes}${settings.mistakeLimit ? `/${MAX_MISTAKES}` : ''}` : 'Mistake check off'}
                 {g.hints ? ` · Hints ${g.hints}` : ''}
               </div>
@@ -309,8 +319,8 @@ export default function App() {
       )}
 
       {g && g.status !== 'playing' && view === 'game' && (
-        <EndScreen won={g.status === 'won'} game={g} stats={stats}
-          onNew={() => startGame(g.named === INKALA_ID ? { named: INKALA_ID } : { difficulty: g.difficulty })}
+        <EndScreen won={g.status === 'won'} game={g} stats={stats} firstClear={firstClear}
+          onNew={() => startGame(g.named ? { named: g.named } : { difficulty: g.difficulty })}
           onRetry={() => dispatch({ type: 'restart' })}
           onInvite={() => { setInviteId(ensureChallengeId()); setModal('invite'); }} onSendBack={sendResultBack}
           onHome={() => { saveGame(null); setView('home'); }} />
@@ -345,8 +355,8 @@ function Tool({ icon, label, onClick, active, disabled }: { icon: string; label:
   );
 }
 
-function Home({ game, stats, today, onContinue, onStart, onModal, loading, onJoin, joinError }: {
-  onJoin: (v: string) => void; joinError: string;
+function Home({ game, stats, today, onContinue, onStart, onModal, loading, onJoin, joinError, clears }: {
+  onJoin: (v: string) => void; joinError: string; clears: string[];
   game: ReturnType<typeof loadGame>; stats: Stats; today: string; onContinue: () => void;
   onStart: (o: { difficulty?: Difficulty; daily?: string; named?: string }) => void; onModal: (m: Modal) => void; loading: string | null;
 }) {
@@ -376,18 +386,23 @@ function Home({ game, stats, today, onContinue, onStart, onModal, loading, onJoi
           {dailyDone && <span className="text-accent">✓</span>}
         </button>
 
-        <button onClick={() => onStart({ named: INKALA_ID })} disabled={!!loading}
-          className="mt-3 flex items-center gap-4 rounded-2xl border border-line bg-surface p-4 text-left hover:bg-raised">
-          <span className="rounded-xl bg-raised p-3 text-text"><Icon name="flame" className="h-6 w-6" /></span>
-          <span className="flex-1">
-            <span className="block font-medium">{INKALA_LABEL}</span>
-            <span className="block text-xs text-muted">{INKALA_CREDIT}</span>
-          </span>
-        </button>
+        <div className="mt-6 text-xs uppercase tracking-widest text-muted">Legends</div>
+        <div className="mt-2 grid grid-cols-1 gap-2">
+          {LEGENDS.map((l) => (
+            <button key={l.id} onClick={() => onStart({ named: l.id })} disabled={!!loading}
+              className="flex items-center justify-between rounded-2xl border border-line bg-surface px-4 py-3.5 text-left hover:bg-raised">
+              <span>
+                <span className="block font-medium">{l.label}</span>
+                <span className="block text-xs text-muted">{l.credit}</span>
+              </span>
+              {clears.includes(l.id) && <span className="text-[11px] text-accent" title="Cleared">✓</span>}
+            </button>
+          ))}
+        </div>
 
         {canContinue && (
           <button onClick={onContinue} className="mt-3 rounded-2xl bg-accent p-4 text-left font-medium text-bg">
-            Continue · {game!.named === INKALA_ID ? INKALA_LABEL : game!.daily ? 'Daily' : game!.difficulty} · {fmtTime(game!.elapsed)}
+            Continue · {game!.named ? (legendById(game!.named)?.label ?? game!.named) : game!.daily ? 'Daily' : game!.difficulty} · {fmtTime(game!.elapsed)}
           </button>
         )}
 
@@ -425,8 +440,8 @@ function Logo() {
   );
 }
 
-function EndScreen({ won, game, stats, onNew, onRetry, onHome, onInvite, onSendBack }: {
-  won: boolean; game: NonNullable<ReturnType<typeof loadGame>>; stats: Stats; onNew: () => void; onRetry: () => void; onHome: () => void;
+function EndScreen({ won, game, stats, firstClear, onNew, onRetry, onHome, onInvite, onSendBack }: {
+  won: boolean; game: NonNullable<ReturnType<typeof loadGame>>; stats: Stats; firstClear?: boolean; onNew: () => void; onRetry: () => void; onHome: () => void;
   onInvite: () => void; onSendBack: () => void;
 }) {
   const ch = game.challenge;
@@ -436,7 +451,10 @@ function EndScreen({ won, game, stats, onNew, onRetry, onHome, onInvite, onSendB
       <div className="w-full max-w-sm animate-fadein rounded-3xl border border-line bg-surface p-6 text-center">
         <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${won ? 'bg-accent/15 text-accent' : 'bg-rose/15 text-rose'} text-2xl`}>{won ? '✓' : '×'}</div>
         <h2 className="text-2xl font-light">{won ? 'Solved' : 'Three mistakes'}</h2>
-        <p className="mt-1 text-sm text-muted">{won ? `${game.named === INKALA_ID ? INKALA_LABEL : `${game.daily ? 'Daily · ' : ''}${game.difficulty}`} in ${fmtTime(game.elapsed)}` : 'Take a breath and try again.'}</p>
+        <p className="mt-1 text-sm text-muted">{won ? `${game.named ? (legendById(game.named)?.label ?? game.named) : `${game.daily ? 'Daily · ' : ''}${game.difficulty}`} in ${fmtTime(game.elapsed)}` : 'Take a breath and try again.'}</p>
+        {won && firstClear && game.named && (
+          <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] text-accent">First clear</p>
+        )}
         {won && (
           <div className={`mt-5 grid gap-2 text-sm ${game.named ? 'grid-cols-1' : 'grid-cols-3'}`}>
             {!game.named && <Stat k="Best" v={d.best !== null ? fmtTime(d.best) : '—'} />}
@@ -454,7 +472,7 @@ function EndScreen({ won, game, stats, onNew, onRetry, onHome, onInvite, onSendB
             ? <button onClick={onSendBack} className="flex items-center justify-center gap-2 rounded-full bg-accent py-3 font-medium text-bg"><Icon name="share" /> Send result back</button>
             : won && <button onClick={onInvite} className="flex items-center justify-center gap-2 rounded-full border border-accent/50 py-3 font-medium text-accent"><Icon name="share" /> Challenge a friend</button>}
           {!won && ch?.role !== 'guest' && <button onClick={onRetry} className="rounded-full bg-accent py-3 font-medium text-bg">Restart this puzzle</button>}
-          <button onClick={onNew} className={`rounded-full py-3 font-medium ${won ? 'bg-accent text-bg' : 'bg-raised'}`}>{game.named === INKALA_ID ? 'Play again' : `New ${game.difficulty} game`}</button>
+          <button onClick={onNew} className={`rounded-full py-3 font-medium ${won ? 'bg-accent text-bg' : 'bg-raised'}`}>{game.named ? 'Play again' : `New ${game.difficulty} game`}</button>
           <button onClick={onHome} className="rounded-full py-3 text-muted">Menu</button>
         </div>
       </div>

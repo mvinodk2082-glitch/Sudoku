@@ -12,6 +12,11 @@ A calm, ad-free Sudoku for the web and Android, made for Pixel phones. It has an
 
 ## Features
 
+### New in 1.7
+
+- **Legend challenges.** Four more record-hard classics join Inkala 2010 on the home screen: AI Escargot (2006), Golden Nugget (2007), Platinum Blonde (~2007), and Everest (2012). Each is a fixed, always-replayable grid with a reserved fingerprint.
+- **Quiet surprise:** clearing a legend for the first time shows a small “First clear” chip, and every win gets a soft accent pulse around the board.
+
 ### New in 1.6
 
 - **Arto Inkala's World's Hardest Sudoku (2010)** as a fixed, always-replayable challenge on the home screen. Credit shown once as “Arto Inkala, 2010”. Its fingerprint is reserved so the random Easy–Master pool never regenerates it.
@@ -113,7 +118,7 @@ The minimum Android version is 7.0 (API 24). The adaptive icon has a monochrome 
 
 **▶ Play in the browser: https://mvinodk2082-glitch.github.io/sudoku-play/**
 
-**[⬇ Download Sudoku 1.6 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.6/Sudoku-1.6-release.apk)** (1.23 MB). It's also in [`releases/`](releases/Sudoku-1.6-release.apk).
+**[⬇ Download Sudoku 1.7 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.7/Sudoku-1.7-release.apk)** (1.23 MB). It's also in [`releases/`](releases/Sudoku-1.7-release.apk).
 SHA-256: `8d6c5566d2577d27791a84492bf2a87acd082e3b23cdf6a9bf9a23cd96b5b2e0`
 
 SHA-256: `9fde731c63420d2fe540447352ebe45c71cc2a57edb99b965670175d7a5066b6`

@@ -168,7 +168,7 @@ export function reducer(s: PlayState, a: Action): PlayState {
 }
 
 // ---- persistence ----
-const K = { game: 'sudoku.game.v1', settings: 'sudoku.settings.v1', stats: 'sudoku.stats.v1' };
+const K = { game: 'sudoku.game.v1', settings: 'sudoku.settings.v1', stats: 'sudoku.stats.v1', clears: 'sudoku.clears.v1' };
 const read = <T,>(k: string, fallback: T): T => {
   try { const v = localStorage.getItem(k); return v ? { ...fallback, ...JSON.parse(v) } : fallback; } catch { return fallback; }
 };
@@ -237,4 +237,13 @@ export function dailyStreaks(daily: Record<string, number>, today: string) {
 export const fmtTime = (ms: number) => {
   const t = Math.floor(ms / 1000), h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
   return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
+};
+
+/** Legend ids the player has fully solved at least once (quiet first-clear badges). */
+export const loadClears = (): string[] => { try { return JSON.parse(localStorage.getItem(K.clears) || '[]'); } catch { return []; } };
+export const markCleared = (id: string): boolean => {
+  const list = loadClears();
+  if (list.includes(id)) return false;
+  try { localStorage.setItem(K.clears, JSON.stringify([...list, id])); } catch { /* quota */ }
+  return true;
 };

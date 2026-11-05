@@ -11,7 +11,7 @@ export function Board({ s, settings, onSelect }: Props) {
   const hint = new Set(s.hintCells);
   return (
     <div role="grid" aria-label="Sudoku board" aria-rowcount={9} aria-colcount={9}
-      className={`grid aspect-square w-full grid-cols-9 overflow-hidden rounded-xl border-2 border-thick bg-surface transition-[filter] duration-300 ${s.paused ? 'pointer-events-none blur-md' : ''}`}>
+      className={`grid aspect-square w-full grid-cols-9 overflow-hidden rounded-xl border-2 border-thick bg-surface transition-[filter] duration-300 ${s.paused ? 'pointer-events-none blur-md' : ''} ${g.status === 'won' ? 'win-pulse' : ''}`}>
       {g.values.map((v, i) => {
         const r = rowOf(i), c = colOf(i);
         const given = !!g.puzzle[i];
