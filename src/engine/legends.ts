@@ -68,8 +68,16 @@ export const EVEREST = legend(
   '812753649943682175675491283154237896369845721287169534521974368438526917796318452',
 );
 
+/** JPF, Apr 2007 — "Easter Monster" (21 givens). Logically solved by Hanson & Marans, 2008 */
+export const EASTER = legend(
+  'easter', 'Easter Monster', 'JPF, 2007',
+  'https://www.sudokusnake.com/eastermonster.php; suuudokuuu.com/hardest-sudoku-puzzles/easter-monster',
+  '100000002090400050006000700050903000000070000000850040700000600030009080002000001',
+  '174385962293467158586192734451923876928674315367851249719548623635219487842736591',
+);
+
 /** Home-screen order: chronological by fame. */
-export const LEGENDS: Legend[] = [ESCARGOT, NUGGET, BLONDE, INKALA, EVEREST];
+export const LEGENDS: Legend[] = [ESCARGOT, EASTER, NUGGET, BLONDE, INKALA, EVEREST];
 
 export const RESERVED_KEYS = new Set(LEGENDS.map((l) => l.key));
 

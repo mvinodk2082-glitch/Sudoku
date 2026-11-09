@@ -386,7 +386,13 @@ function Home({ game, stats, today, onContinue, onStart, onModal, loading, onJoi
           {dailyDone && <span className="text-accent">✓</span>}
         </button>
 
-        <div className="mt-6 text-xs uppercase tracking-widest text-muted">Legends</div>
+        <div className="mt-6 flex items-baseline justify-between text-xs uppercase tracking-widest text-muted">
+          <span>Legends</span>
+          {(() => { const n = LEGENDS.filter((l) => clears.includes(l.id)).length; return n > 0 && (
+            <span className={`normal-case tracking-normal tabular-nums ${n === LEGENDS.length ? 'animate-fadein text-accent' : ''}`} title={n === LEGENDS.length ? 'Every legend cleared' : undefined}>
+              {n === LEGENDS.length ? '✦ all cleared' : `${n} of ${LEGENDS.length}`}
+            </span>); })()}
+        </div>
         <div className="mt-2 grid grid-cols-1 gap-2">
           {LEGENDS.map((l) => (
             <button key={l.id} onClick={() => onStart({ named: l.id })} disabled={!!loading}

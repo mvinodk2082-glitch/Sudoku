@@ -12,6 +12,11 @@ A calm, ad-free Sudoku for the web and Android, made for Pixel phones. It has an
 
 ## Features
 
+### New in 1.8
+
+- **Easter Monster (JPF, 2007).** The 21-clue grid that stumped solvers until Hanson and Marans published a full logical solution in 2008, now a fixed, always-replayable legend.
+- **Quiet surprise:** the Legends heading keeps a small “cleared” count, which turns into a soft accent mark once you’ve beaten them all.
+
 ### New in 1.7
 
 - **Legend challenges.** Four more record-hard classics join Inkala 2010 on the home screen: AI Escargot (2006), Golden Nugget (2007), Platinum Blonde (~2007), and Everest (2012). Each is a fixed, always-replayable grid with a reserved fingerprint.
@@ -118,7 +123,7 @@ The minimum Android version is 7.0 (API 24). The adaptive icon has a monochrome 
 
 **▶ Play in the browser: https://mvinodk2082-glitch.github.io/sudoku-play/**
 
-**[⬇ Download Sudoku 1.7 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.7/Sudoku-1.7-release.apk)** (1.23 MB). It's also in [`releases/`](releases/Sudoku-1.7-release.apk).
+**[⬇ Download Sudoku 1.8 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.8/Sudoku-1.8-release.apk)** (1.23 MB). It's also in [`releases/`](releases/Sudoku-1.8-release.apk).
 SHA-256: `8d6c5566d2577d27791a84492bf2a87acd082e3b23cdf6a9bf9a23cd96b5b2e0`
 
 SHA-256: `9fde731c63420d2fe540447352ebe45c71cc2a57edb99b965670175d7a5066b6`
