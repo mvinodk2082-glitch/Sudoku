@@ -5,7 +5,7 @@ import { DIFFICULTIES, Difficulty, dailyKey } from './engine/constants';
 import { requestPuzzle } from './game/generate';
 import { LEGENDS, legendById, legendPuzzle } from './engine/legends';
 import {
-  MAX_MISTAKES, Settings, Stats, dailyStreaks, emptyStats, fmtTime, initialPlay, loadClears, loadGame, loadSettings, loadStats, markCleared,
+  MAX_MISTAKES, Settings, Stats, dailyStreaks, emptyStats, fmtTime, initialPlay, loadClears, loadGame, loadLegendBest, recordLegendTime, loadSettings, loadStats, markCleared,
   type Action, recordResult, reducer, saveGame, saveSettings, saveStats,
 } from './game/store';
 import { Icon, Sheet, Toggle } from './ui';
@@ -23,6 +23,8 @@ export default function App() {
   const [stats, setStats] = useState<Stats>(loadStats);
   const [clears, setClears] = useState(loadClears);
   const [firstClear, setFirstClear] = useState(false);
+  const [legendBest, setLegendBest] = useState(loadLegendBest);
+  const [newBest, setNewBest] = useState(false);
   const [s, dispatch] = useReducer(reducer, initialPlay, (init) => {
     const g = loadGame();
     return g && g.status === 'playing' ? reducer(init, { type: 'load', game: g }) : init;
@@ -71,7 +73,9 @@ export default function App() {
       const first = markCleared(g.named);
       if (first) { setClears(loadClears()); setFirstClear(true); }
       else setFirstClear(false);
-    } else setFirstClear(false);
+      setNewBest(recordLegendTime(g.named, g.elapsed));
+      setLegendBest(loadLegendBest());
+    } else { setFirstClear(false); setNewBest(false); }
   }, [g?.status, g]);
 
   const feel = useCallback((f: Feel | null) => haptic(f, settings.haptics), [settings.haptics]);
@@ -232,7 +236,7 @@ export default function App() {
     <div className="mx-auto flex h-[100dvh] max-w-[560px] flex-col">
       <div className="sr-only" aria-live="polite">{announce}</div>
       {view === 'home' || !g ? (
-        <Home game={g} stats={stats} today={today} clears={clears} onContinue={() => { dispatch({ type: 'pause', paused: false }); setView('game'); }}
+        <Home game={g} stats={stats} today={today} clears={clears} legendBest={legendBest} onContinue={() => { dispatch({ type: 'pause', paused: false }); setView('game'); }}
           onStart={startGame} onModal={setModal} loading={loading}
           onJoin={(v) => { if (!handleCode(v)) setJoinError('That code isn’t a valid Sudoku challenge.'); }} joinError={joinError} />
       ) : (
@@ -319,7 +323,7 @@ export default function App() {
       )}
 
       {g && g.status !== 'playing' && view === 'game' && (
-        <EndScreen won={g.status === 'won'} game={g} stats={stats} firstClear={firstClear}
+        <EndScreen won={g.status === 'won'} game={g} stats={stats} firstClear={firstClear} newBest={newBest}
           onNew={() => startGame(g.named ? { named: g.named } : { difficulty: g.difficulty })}
           onRetry={() => dispatch({ type: 'restart' })}
           onInvite={() => { setInviteId(ensureChallengeId()); setModal('invite'); }} onSendBack={sendResultBack}
@@ -355,8 +359,8 @@ function Tool({ icon, label, onClick, active, disabled }: { icon: string; label:
   );
 }
 
-function Home({ game, stats, today, onContinue, onStart, onModal, loading, onJoin, joinError, clears }: {
-  onJoin: (v: string) => void; joinError: string; clears: string[];
+function Home({ game, stats, today, onContinue, onStart, onModal, loading, onJoin, joinError, clears, legendBest }: {
+  onJoin: (v: string) => void; joinError: string; clears: string[]; legendBest: Record<string, number>;
   game: ReturnType<typeof loadGame>; stats: Stats; today: string; onContinue: () => void;
   onStart: (o: { difficulty?: Difficulty; daily?: string; named?: string }) => void; onModal: (m: Modal) => void; loading: string | null;
 }) {
@@ -401,7 +405,10 @@ function Home({ game, stats, today, onContinue, onStart, onModal, loading, onJoi
                 <span className="block font-medium">{l.label}</span>
                 <span className="block text-xs text-muted">{l.credit}</span>
               </span>
-              {clears.includes(l.id) && <span className="text-[11px] text-accent" title="Cleared">✓</span>}
+              {clears.includes(l.id) && (
+                <span className="flex items-center gap-1.5 text-[11px] text-accent" title="Cleared · your best">
+                  {legendBest[l.id] !== undefined && <span className="tabular-nums text-muted">{fmtTime(legendBest[l.id])}</span>}✓
+                </span>)}
             </button>
           ))}
         </div>
@@ -446,8 +453,8 @@ function Logo() {
   );
 }
 
-function EndScreen({ won, game, stats, firstClear, onNew, onRetry, onHome, onInvite, onSendBack }: {
-  won: boolean; game: NonNullable<ReturnType<typeof loadGame>>; stats: Stats; firstClear?: boolean; onNew: () => void; onRetry: () => void; onHome: () => void;
+function EndScreen({ won, game, stats, firstClear, newBest, onNew, onRetry, onHome, onInvite, onSendBack }: {
+  won: boolean; game: NonNullable<ReturnType<typeof loadGame>>; stats: Stats; firstClear?: boolean; newBest?: boolean; onNew: () => void; onRetry: () => void; onHome: () => void;
   onInvite: () => void; onSendBack: () => void;
 }) {
   const ch = game.challenge;
@@ -460,6 +467,9 @@ function EndScreen({ won, game, stats, firstClear, onNew, onRetry, onHome, onInv
         <p className="mt-1 text-sm text-muted">{won ? `${game.named ? (legendById(game.named)?.label ?? game.named) : `${game.daily ? 'Daily · ' : ''}${game.difficulty}`} in ${fmtTime(game.elapsed)}` : 'Take a breath and try again.'}</p>
         {won && firstClear && game.named && (
           <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] text-accent">First clear</p>
+        )}
+        {won && newBest && !firstClear && game.named && (
+          <p className="mt-3 inline-flex animate-fadein items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] text-accent">New best</p>
         )}
         {won && (
           <div className={`mt-5 grid gap-2 text-sm ${game.named ? 'grid-cols-1' : 'grid-cols-3'}`}>

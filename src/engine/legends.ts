@@ -76,8 +76,16 @@ export const EASTER = legend(
   '174385962293467158586192734451923876928674315367851249719548623635219487842736591',
 );
 
+/** "Red Dwarf" (22 givens) — from the Sudoku Players' Forum hardest-list canon; benchmark grid in attractivechaos/plb */
+export const RED_DWARF = legend(
+  'reddwarf', 'Red Dwarf', "Players' Forum hardest list",
+  'https://github.com/attractivechaos/plb/blob/master/sudoku/sudoku.txt (Red Dwarf)',
+  '12.3....435....1....4........54..2..6...7.........8.9...31..5.......9.7.....6...8',
+  '126395784359847162874621953985416237631972845247538691763184529418259376592763418',
+);
+
 /** Home-screen order: chronological by fame. */
-export const LEGENDS: Legend[] = [ESCARGOT, EASTER, NUGGET, BLONDE, INKALA, EVEREST];
+export const LEGENDS: Legend[] = [ESCARGOT, EASTER, NUGGET, BLONDE, RED_DWARF, INKALA, EVEREST];
 
 export const RESERVED_KEYS = new Set(LEGENDS.map((l) => l.key));
 

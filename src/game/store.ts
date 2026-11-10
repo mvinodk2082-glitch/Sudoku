@@ -168,7 +168,7 @@ export function reducer(s: PlayState, a: Action): PlayState {
 }
 
 // ---- persistence ----
-const K = { game: 'sudoku.game.v1', settings: 'sudoku.settings.v1', stats: 'sudoku.stats.v1', clears: 'sudoku.clears.v1' };
+const K = { game: 'sudoku.game.v1', settings: 'sudoku.settings.v1', stats: 'sudoku.stats.v1', clears: 'sudoku.clears.v1', legendBest: 'sudoku.legendbest.v1' };
 const read = <T,>(k: string, fallback: T): T => {
   try { const v = localStorage.getItem(k); return v ? { ...fallback, ...JSON.parse(v) } : fallback; } catch { return fallback; }
 };
@@ -246,4 +246,15 @@ export const markCleared = (id: string): boolean => {
   if (list.includes(id)) return false;
   try { localStorage.setItem(K.clears, JSON.stringify([...list, id])); } catch { /* quota */ }
   return true;
+};
+
+/** Fastest clean solve per legend (ms). Quiet personal bests on the home list. */
+export const loadLegendBest = (): Record<string, number> => { try { return JSON.parse(localStorage.getItem(K.legendBest) || '{}'); } catch { return {}; } };
+/** Records a legend time; returns true when it beats a previous best (not on the first clear). */
+export const recordLegendTime = (id: string, ms: number): boolean => {
+  const all = loadLegendBest();
+  const prev = all[id];
+  if (prev !== undefined && ms >= prev) return false;
+  try { localStorage.setItem(K.legendBest, JSON.stringify({ ...all, [id]: ms })); } catch { /* quota */ }
+  return prev !== undefined;
 };

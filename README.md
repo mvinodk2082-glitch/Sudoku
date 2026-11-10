@@ -12,6 +12,11 @@ A calm, ad-free Sudoku for the web and Android, made for Pixel phones. It has an
 
 ## Features
 
+### New in 1.9
+
+- **Red Dwarf.** A 22-clue grid from the forum hardest-puzzle canon, now a fixed, always-replayable legend.
+- **Quiet surprise:** cleared legends now show your best time, and beating it earns a small “New best” mark.
+
 ### New in 1.8
 
 - **Easter Monster (JPF, 2007).** The 21-clue grid that stumped solvers until Hanson and Marans published a full logical solution in 2008, now a fixed, always-replayable legend.
@@ -123,8 +128,8 @@ The minimum Android version is 7.0 (API 24). The adaptive icon has a monochrome 
 
 **▶ Play in the browser: https://mvinodk2082-glitch.github.io/sudoku-play/**
 
-**[⬇ Download Sudoku 1.8 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.8/Sudoku-1.8-release.apk)** (1.23 MB). It's also in [`releases/`](releases/Sudoku-1.8-release.apk).
-SHA-256: `8d6c5566d2577d27791a84492bf2a87acd082e3b23cdf6a9bf9a23cd96b5b2e0`
+**[⬇ Download Sudoku 1.9 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.9/Sudoku-1.9-release.apk)** (1.23 MB). It's also in [`releases/`](releases/Sudoku-1.9-release.apk).
+SHA-256: `e8c97812f7a26def128a3c2300343c0ed5bfe5242d0bde0cb2188cd0f35e7a72`
 
 SHA-256: `9fde731c63420d2fe540447352ebe45c71cc2a57edb99b965670175d7a5066b6`
 
