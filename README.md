@@ -12,6 +12,11 @@ A calm, ad-free Sudoku for the web and Android, made for Pixel phones. It has an
 
 ## Features
 
+### New in 1.10
+
+- **Fata Morgana.** A 21-clue forum-canon grid famous for stalling backtracking and DLX solvers, now a fixed, always-replayable legend.
+- **Quiet surprise:** the newest legend wears a soft pulsing dot on home until you first open it.
+
 ### New in 1.9
 
 - **Red Dwarf.** A 22-clue grid from the forum hardest-puzzle canon, now a fixed, always-replayable legend.
@@ -128,8 +133,8 @@ The minimum Android version is 7.0 (API 24). The adaptive icon has a monochrome 
 
 **▶ Play in the browser: https://mvinodk2082-glitch.github.io/sudoku-play/**
 
-**[⬇ Download Sudoku 1.9 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.9/Sudoku-1.9-release.apk)** (1.23 MB). It's also in [`releases/`](releases/Sudoku-1.9-release.apk).
-SHA-256: `e8c97812f7a26def128a3c2300343c0ed5bfe5242d0bde0cb2188cd0f35e7a72`
+**[⬇ Download Sudoku 1.10 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.10/Sudoku-1.10-release.apk)** (1.24 MB). It's also in [`releases/`](releases/Sudoku-1.10-release.apk).
+SHA-256: `73c8356edd5653a768c97f958d732ca0d44eb0bdf784fe5aaab2ec987b4ba327`
 
 SHA-256: `9fde731c63420d2fe540447352ebe45c71cc2a57edb99b965670175d7a5066b6`
 

@@ -84,8 +84,19 @@ export const RED_DWARF = legend(
   '126395784359847162874621953985416237631972845247538691763184529418259376592763418',
 );
 
+/** "Fata Morgana" (21 givens) — Players' Forum hardest-list canon; famously brutal for backtracking/DLX solvers (Allan Barker's set-logic study) */
+export const FATA_MORGANA = legend(
+  'fatamorgana', 'Fata Morgana', "Players' Forum hardest list",
+  'https://sudoku.allanbarker.com/sweb/extra/fm/a_fm.htm; attractivechaos/plb sudoku.txt (Fata Morgana)',
+  '........3..1..56...9..4..7......9.5.7.......8.5.4.2....8..2..9...35..1..6........',
+  '562987413471235689398146275236819754714653928859472361187324596923568147645791832',
+);
+
+/** Newest addition: gets a quiet pulse dot on home until first opened. */
+export const NEWEST_LEGEND = FATA_MORGANA.id;
+
 /** Home-screen order: chronological by fame. */
-export const LEGENDS: Legend[] = [ESCARGOT, EASTER, NUGGET, BLONDE, RED_DWARF, INKALA, EVEREST];
+export const LEGENDS: Legend[] = [ESCARGOT, EASTER, NUGGET, BLONDE, RED_DWARF, FATA_MORGANA, INKALA, EVEREST];
 
 export const RESERVED_KEYS = new Set(LEGENDS.map((l) => l.key));
 

@@ -3,7 +3,7 @@ import { haptic, inputFeel, type Feel } from './haptics';
 import { Board } from './Board';
 import { DIFFICULTIES, Difficulty, dailyKey } from './engine/constants';
 import { requestPuzzle } from './game/generate';
-import { LEGENDS, legendById, legendPuzzle } from './engine/legends';
+import { LEGENDS, NEWEST_LEGEND, legendById, legendPuzzle } from './engine/legends';
 import {
   MAX_MISTAKES, Settings, Stats, dailyStreaks, emptyStats, fmtTime, initialPlay, loadClears, loadGame, loadLegendBest, recordLegendTime, loadSettings, loadStats, markCleared,
   type Action, recordResult, reducer, saveGame, saveSettings, saveStats,
@@ -368,6 +368,11 @@ function Home({ game, stats, today, onContinue, onStart, onModal, loading, onJoi
   const streak = dailyStreaks(stats.daily, today);
   const canContinue = game && game.status === 'playing';
   const [code, setCode] = useState('');
+  const [newSeen, setNewSeen] = useState(() => { try { return localStorage.getItem('sudoku.newLegendSeen') === NEWEST_LEGEND; } catch { return true; } });
+  const openLegend = (id: string) => {
+    if (id === NEWEST_LEGEND && !newSeen) { setNewSeen(true); try { localStorage.setItem('sudoku.newLegendSeen', id); } catch { /* private mode */ } }
+    onStart({ named: id });
+  };
   return (
     <div className="safe-t safe-b flex flex-1 flex-col px-5">
       <div className="flex justify-end gap-1 pt-2">
@@ -399,10 +404,11 @@ function Home({ game, stats, today, onContinue, onStart, onModal, loading, onJoi
         </div>
         <div className="mt-2 grid grid-cols-1 gap-2">
           {LEGENDS.map((l) => (
-            <button key={l.id} onClick={() => onStart({ named: l.id })} disabled={!!loading}
+            <button key={l.id} onClick={() => openLegend(l.id)} disabled={!!loading}
               className="flex items-center justify-between rounded-2xl border border-line bg-surface px-4 py-3.5 text-left hover:bg-raised">
               <span>
-                <span className="block font-medium">{l.label}</span>
+                <span className="flex items-center gap-1.5 font-medium">{l.label}
+                  {l.id === NEWEST_LEGEND && !newSeen && !clears.includes(l.id) && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" title="New" aria-label="New" />}</span>
                 <span className="block text-xs text-muted">{l.credit}</span>
               </span>
               {clears.includes(l.id) && (
