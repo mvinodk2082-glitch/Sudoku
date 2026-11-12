@@ -92,11 +92,19 @@ export const FATA_MORGANA = legend(
   '562987413471235689398146275236819754714653928859472361187324596923568147645791832',
 );
 
+/** "Cheese" (23 givens) — Players' Forum hardest-list canon; benchmark grid in attractivechaos/plb */
+export const CHEESE = legend(
+  'cheese', 'Cheese', "Players' Forum hardest list",
+  'https://github.com/attractivechaos/plb/blob/master/sudoku/sudoku.txt (Cheese)',
+  '.2..5.7..4..1....68....3...2....8..3.4..2.5.....6...1...2.9.....9......57.4...9..',
+  '123456789457189236869273154271548693346921578985637412512394867698712345734865921',
+);
+
 /** Newest addition: gets a quiet pulse dot on home until first opened. */
-export const NEWEST_LEGEND = FATA_MORGANA.id;
+export const NEWEST_LEGEND = CHEESE.id;
 
 /** Home-screen order: chronological by fame. */
-export const LEGENDS: Legend[] = [ESCARGOT, EASTER, NUGGET, BLONDE, RED_DWARF, FATA_MORGANA, INKALA, EVEREST];
+export const LEGENDS: Legend[] = [ESCARGOT, EASTER, NUGGET, BLONDE, RED_DWARF, FATA_MORGANA, CHEESE, INKALA, EVEREST];
 
 export const RESERVED_KEYS = new Set(LEGENDS.map((l) => l.key));
 

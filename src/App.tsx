@@ -359,6 +359,18 @@ function Tool({ icon, label, onClick, active, disabled }: { icon: string; label:
   );
 }
 
+/** Tiny 9×9 map of a legend's givens — its "fingerprint" shape (e.g. Escargot's spiral). Lights up once cleared. */
+function GivensGlyph({ puzzle, lit }: { puzzle: number[]; lit: boolean }) {
+  return (
+    <svg viewBox="0 0 27 27" className="h-7 w-7 shrink-0" aria-hidden="true">
+      {puzzle.map((v, i) => (
+        <rect key={i} x={(i % 9) * 3 + 0.5} y={Math.floor(i / 9) * 3 + 0.5} width="2" height="2" rx="0.6"
+          className={v ? (lit ? 'fill-accent' : 'fill-muted') : 'fill-line'} opacity={v ? 1 : 0.6} />
+      ))}
+    </svg>
+  );
+}
+
 function Home({ game, stats, today, onContinue, onStart, onModal, loading, onJoin, joinError, clears, legendBest }: {
   onJoin: (v: string) => void; joinError: string; clears: string[]; legendBest: Record<string, number>;
   game: ReturnType<typeof loadGame>; stats: Stats; today: string; onContinue: () => void;
@@ -406,10 +418,13 @@ function Home({ game, stats, today, onContinue, onStart, onModal, loading, onJoi
           {LEGENDS.map((l) => (
             <button key={l.id} onClick={() => openLegend(l.id)} disabled={!!loading}
               className="flex items-center justify-between rounded-2xl border border-line bg-surface px-4 py-3.5 text-left hover:bg-raised">
+              <span className="flex items-center gap-3">
+              <GivensGlyph puzzle={l.puzzle} lit={clears.includes(l.id)} />
               <span>
                 <span className="flex items-center gap-1.5 font-medium">{l.label}
                   {l.id === NEWEST_LEGEND && !newSeen && !clears.includes(l.id) && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" title="New" aria-label="New" />}</span>
                 <span className="block text-xs text-muted">{l.credit}</span>
+              </span>
               </span>
               {clears.includes(l.id) && (
                 <span className="flex items-center gap-1.5 text-[11px] text-accent" title="Cleared · your best">
