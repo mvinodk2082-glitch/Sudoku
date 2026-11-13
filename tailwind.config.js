@@ -16,7 +16,7 @@ export default {
         fadein: { '0%': { opacity: '0', transform: 'translateY(8px)' }, '100%': { opacity: '1', transform: 'none' } },
         shake: { '0%,100%': { transform: 'none' }, '25%': { transform: 'translateX(-2px)' }, '75%': { transform: 'translateX(2px)' } },
       },
-      animation: { pop: 'pop .22s ease-out', glow: 'glow .9s ease-in-out', fadein: 'fadein .35s ease-out', shake: 'shake .25s ease-in-out' },
+      animation: { pop: 'pop .22s ease-out', glow: 'glow .9s ease-in-out both', fadein: 'fadein .35s ease-out', shake: 'shake .25s ease-in-out' },
     },
   },
   plugins: [],

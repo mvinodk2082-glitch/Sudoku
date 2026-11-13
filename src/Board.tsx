@@ -1,5 +1,5 @@
 import { boxOf, colOf, rowOf } from './engine/core';
-import type { Game, PlayState, Settings } from './game/store';
+import { rippleDelay, type Game, type PlayState, type Settings } from './game/store';
 
 interface Props { s: PlayState; settings: Settings; onSelect: (i: number) => void }
 
@@ -30,7 +30,7 @@ export function Board({ s, settings, onSelect }: Props) {
           <button key={i} role="gridcell" aria-label={label} aria-selected={i === sel} tabIndex={i === sel ? 0 : -1}
             onClick={() => onSelect(i)}
             className={`relative flex aspect-square items-center justify-center ${borders} ${bg} ${i === sel ? 'is-sel' : ''} ${wrong ? 'is-wrong' : ''} transition-colors duration-150`}>
-            {glow.has(i) && <span key={s.glow.key} className="pointer-events-none absolute inset-0 animate-glow" />}
+            {glow.has(i) && <span key={s.glow.key} className="pointer-events-none absolute inset-0 animate-glow" style={{ animationDelay: `${rippleDelay(s.glow.origin, i)}ms` }} />}
             {v ? (
               <span key={i === s.pop.cell ? s.pop.key : 0}
                 className={`relative text-[clamp(20px,7.4vw,34px)] leading-none ${given ? 'font-medium text-given' : wrong ? 'font-normal text-rose wrong-digit' : 'font-normal text-accent'} ${i === s.pop.cell && !given ? 'animate-pop' : ''} ${wrong && i === s.pop.cell ? 'animate-shake' : ''}`}>

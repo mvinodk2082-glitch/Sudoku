@@ -12,6 +12,11 @@ A calm, ad-free Sudoku for the web and Android, made for Pixel phones. It has an
 
 ## Features
 
+### New in 1.12
+
+- **Loki.** mith's 2022 SER 11.9 puzzle, the first known to need more than two levels of trial and error, now a fixed, always-replayable legend.
+- **Quiet surprise:** completion glows now ripple outward from the cell you just filled, and placing the last copy of a digit lights up all nine with a crisp tick.
+
 ### New in 1.11
 
 - **Cheese.** A 23-clue grid from the forum hardest-puzzle canon, now a fixed, always-replayable legend.
@@ -138,8 +143,8 @@ The minimum Android version is 7.0 (API 24). The adaptive icon has a monochrome 
 
 **▶ Play in the browser: https://mvinodk2082-glitch.github.io/sudoku-play/**
 
-**[⬇ Download Sudoku 1.11 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.11/Sudoku-1.11-release.apk)** (1.24 MB). It's also in [`releases/`](releases/Sudoku-1.11-release.apk).
-SHA-256: `4e151fde8b49833d619c9e68981d2347cc24b380bff1145417121e7b7d4de2e3`
+**[⬇ Download Sudoku 1.12 APK](https://github.com/mvinodk2082-glitch/Sudoku/releases/download/v1.12/Sudoku-1.12-release.apk)** (1.24 MB). It's also in [`releases/`](releases/Sudoku-1.12-release.apk).
+SHA-256: `817d1ef37958d935d2ee350ccb2ec54f4dcba68aa98d2732cf0d41fbea7b78f0`
 
 SHA-256: `9fde731c63420d2fe540447352ebe45c71cc2a57edb99b965670175d7a5066b6`
 

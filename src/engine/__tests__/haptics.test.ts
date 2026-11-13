@@ -9,7 +9,8 @@ describe('haptic event mapping', () => {
     const prev = board([0, 1, 40]);
     const ok = { ...prev, values: prev.values.map((v, i) => (i === 40 ? sol[40] : v)) };
     expect(inputFeel(prev, ok, 40, false)).toBe('unit'); // 40 was the only gap in its row/col/box
-    const prev2 = board([0, 1, 2, 9]);
+    const twin = sol.findIndex((v, i) => v === sol[0] && i > 26 && i % 9 > 2); // another copy of the digit stays open
+    const prev2 = board([0, 1, 2, 9, twin]);
     const ok2 = { ...prev2, values: prev2.values.map((v, i) => (i === 0 ? sol[0] : v)) };
     expect(inputFeel(prev2, ok2, 0, false)).toBe('place');
     const bad = { ...prev2, values: prev2.values.map((v, i) => (i === 0 ? (sol[0] % 9) + 1 : v)) };

@@ -100,11 +100,19 @@ export const CHEESE = legend(
   '123456789457189236869273154271548693346921578985637412512394867698712345734865921',
 );
 
+/** mith (Philip Newman), Mar 2022 — "Loki", SER 11.9; first known puzzle beyond T&E(2), solved via the trivalue oddagon (tridagon) */
+export const LOKI = legend(
+  'loki', 'Loki', 'mith, 2022',
+  'http://forum.enjoysudoku.com/loki-ser-11-9-t39840.html; github.com/denis-berthier/Classifications-of-TE3-Sudokus',
+  '57....9..........8.1.........168..4......28.9..2.9416.....2.....6.9.82.4...41.6..',
+  '576843921493261578218759436951687342647132859832594167184326795365978214729415683',
+);
+
 /** Newest addition: gets a quiet pulse dot on home until first opened. */
-export const NEWEST_LEGEND = CHEESE.id;
+export const NEWEST_LEGEND = LOKI.id;
 
 /** Home-screen order: chronological by fame. */
-export const LEGENDS: Legend[] = [ESCARGOT, EASTER, NUGGET, BLONDE, RED_DWARF, FATA_MORGANA, CHEESE, INKALA, EVEREST];
+export const LEGENDS: Legend[] = [ESCARGOT, EASTER, NUGGET, BLONDE, RED_DWARF, FATA_MORGANA, CHEESE, INKALA, EVEREST, LOKI];
 
 export const RESERVED_KEYS = new Set(LEGENDS.map((l) => l.key));
 

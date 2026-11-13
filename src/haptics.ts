@@ -33,6 +33,8 @@ export function inputFeel(prev: G, next: G, cell: number, won: boolean): Feel | 
   if (v !== next.solution[cell]) return 'wrong';
   const units = [ROWS[rowOf(cell)], COLS[colOf(cell)], BOXES[boxOf(cell)]];
   if (units.some((u) => full(next.values, next.solution, u) && !full(prev.values, prev.solution, u))) return 'unit';
+  const nine = next.solution.map((d, i) => (d === v ? i : -1)).filter((i) => i >= 0);
+  if (full(next.values, next.solution, nine) && !full(prev.values, prev.solution, nine)) return 'unit'; // last of a digit
   return 'place';
 }
 

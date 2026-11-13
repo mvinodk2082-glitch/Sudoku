@@ -24,7 +24,7 @@ export interface PlayState {
   game: Game | null; selected: number; notesMode: boolean; paused: boolean;
   past: Snapshot[]; future: Snapshot[];
   message: { text: string; tone: 'info' | 'hint' | 'error' } | null;
-  hintCells: number[]; glow: { cells: number[]; key: number }; pop: { cell: number; key: number }; shake: number;
+  hintCells: number[]; glow: { cells: number[]; key: number; origin?: number }; pop: { cell: number; key: number }; shake: number;
 }
 
 export type Action =
@@ -48,6 +48,10 @@ export const initialPlay: PlayState = {
   hintCells: [], glow: { cells: [], key: 0 }, pop: { cell: -1, key: 0 }, shake: 0,
 };
 
+/** Completion glows ripple outward from the cell you just filled (~35 ms per step). */
+export const rippleDelay = (origin: number | undefined, i: number) =>
+  origin === undefined || origin < 0 ? 0 : Math.max(Math.abs(rowOf(origin) - rowOf(i)), Math.abs(colOf(origin) - colOf(i))) * 35;
+
 const snap = (g: Game): Snapshot => ({ values: g.values.slice(), notes: g.notes.slice() });
 
 function completedUnits(g: Game, cell: number): number[] {
@@ -55,7 +59,11 @@ function completedUnits(g: Game, cell: number): number[] {
   for (const u of [ROWS[rowOf(cell)], COLS[colOf(cell)], BOXES[boxOf(cell)]]) {
     if (u.every((c) => g.values[c] === g.solution[c])) out.push(...u);
   }
-  return out;
+  // Last of a digit placed: all nine copies join the glow.
+  const d = g.solution[cell];
+  const same = g.solution.map((v, i) => (v === d ? i : -1)).filter((i) => i >= 0);
+  if (same.every((c) => g.values[c] === d)) out.push(...same);
+  return [...new Set(out)];
 }
 const isWon = (g: Game) => g.values.every((v, i) => v === g.solution[i]);
 
@@ -76,7 +84,7 @@ function place(s: PlayState, cell: number, digit: number, settings: Settings, fr
   const glowCells = wrong ? [] : completedUnits(game, cell);
   return {
     ...s, game, past: [...s.past, snap(g)].slice(-300), future: [], message,
-    glow: glowCells.length ? { cells: glowCells, key: s.glow.key + 1 } : s.glow,
+    glow: glowCells.length ? { cells: glowCells, key: s.glow.key + 1, origin: cell } : s.glow,
     pop: { cell, key: s.pop.key + 1 },
     shake: wrong && settings.mistakeCheck ? s.shake + 1 : s.shake,
   };
